@@ -1,0 +1,127 @@
+<view class="page">
+  <view class="hero-card">
+    <view class="hero-badge">HEART BYTE</view>
+    <view class="hero-body">
+      <view class="hero-text">
+        <text class="hero-title">心跳节律预测计算器</text>
+        <text class="hero-subtitle">Calculations are based on regression equations reported by Schmidt et al. (Clin Res Cardiol, 2023).</text>
+      </view>
+      <view class="hero-visual">
+        <view class="hero-bubble">
+          <view class="hero-wave"></view>
+          <view class="hero-wave hero-wave-alt"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card input-card">
+    <text class="section-title">患者输入</text>
+    <text class="section-desc">填写下方字段并点击预测按钮以生成机械时相窗口。</text>
+
+    <view class="field">
+      <text class="field-label">性别</text>
+      <picker mode="selector" range="{{sexOptions}}" range-key="label" value="{{sexIndex}}" bindchange="handleSexChange" class="picker">
+        <view class="picker-display">{{sexOptions[sexIndex].label}}</view>
+      </picker>
+    </view>
+
+    <view class="field">
+      <text class="field-label">年龄（岁）</text>
+      <input type="number" class="input" value="{{age}}" placeholder="40" data-field="age" bindinput="handleInput" />
+    </view>
+
+    <view class="field-row">
+      <view class="field half">
+        <text class="field-label">最大心率（bpm）</text>
+        <input type="number" class="input" value="{{hrMax}}" placeholder="100" data-field="hrMax" bindinput="handleInput" />
+      </view>
+      <view class="field half">
+        <text class="field-label">最小心率（bpm）</text>
+        <input type="number" class="input" value="{{hrMin}}" placeholder="80" data-field="hrMin" bindinput="handleInput" />
+      </view>
+    </view>
+
+    <view class="field">
+      <text class="field-label">平均心率（可选，bpm）</text>
+      <input type="number" class="input" value="{{hrAvg}}" placeholder="可选" data-field="hrAvg" bindinput="handleInput" />
+    </view>
+
+    <button class="primary-btn" bindtap="handlePredict">预测</button>
+    <text class="form-hint">所有时间均以毫秒表示。</text>
+  </view>
+
+  <block wx:if="{{results}}">
+    <view class="results-stack">
+      <view class="card summary-card">
+        <view class="card-header">
+          <text class="section-title">R 波对齐时间轴</text>
+          <text class="section-desc summary-desc">直观对比不同心率下心脏机械期相的持续时间与位置。</text>
+        </view>
+        <view class="meta-chip-row">
+          <view class="meta-chip" wx:for="{{results.metaChips}}" wx:key="label">
+            <text class="meta-chip-label">{{item.label}}</text>
+            <text class="meta-chip-value">{{item.value}}</text>
+          </view>
+        </view>
+        <view class="phase-group" wx:for="{{results.summaryChips}}" wx:key="label">
+          <text class="phase-group-label">{{item.label}}</text>
+          <view class="phase-chip-list">
+            <view class="phase-chip" wx:for="{{item.pills}}" wx:key="label" wx:for-item="pill" style="color: {{pill.color}}; background: {{pill.bgColor}};">
+              <view class="chip-dot" style="background: {{pill.color}};"></view>
+              <text class="phase-chip-text">{{pill.label}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="card overlap-card">
+        <view class="card-header">
+          <text class="section-title">{{results.overlapSection.title}}</text>
+          <view class="soft-pill" style="color: {{results.overlapSection.pill.color}}; background: {{results.overlapSection.pill.bgColor}};">{{results.overlapSection.pill.label}}</view>
+        </view>
+        <view class="kv-list">
+          <view class="kv-row" wx:for="{{results.overlapSection.items}}" wx:key="label">
+            <text class="kv-label">{{item.label}}</text>
+            <text class="kv-value">{{item.value}}</text>
+          </view>
+        </view>
+        <text class="section-desc">{{results.overlapSection.description}}</text>
+      </view>
+
+      <block wx:for="{{results.hrSections}}" wx:key="key" wx:for-item="section">
+        <view class="card metric-card">
+          <view class="card-header">
+            <text class="section-title">{{section.title}}</text>
+            <view class="soft-pill" style="color: {{section.color}}; background: {{section.bgColor}};">{{section.bpmLabel}}</view>
+          </view>
+          <view class="kv-list">
+            <view class="kv-row" wx:for="{{section.items}}" wx:key="label" wx:for-item="row">
+              <text class="kv-label">{{row.label}}</text>
+              <text class="kv-value">{{row.value}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="card timeline-card">
+      <view class="card-header">
+        <text class="section-title">机械期相示意</text>
+        <text class="section-desc">Time axis aligned to the ECG R-wave for HRmin / HRmax / HRavg（若提供）以及重叠窗口。</text>
+      </view>
+      <view class="timeline-wrapper">
+        <canvas canvas-id="timelineCanvas" id="timelineCanvas" class="timeline-canvas" style="width: 100%;" width="700" height="{{canvasHeight}}"></canvas>
+      </view>
+      <text class="timeline-caption">Values are approximate and assume sinus rhythm with normal ventricular conduction. Confirm with direct measurements (tissue Doppler/M-mode).</text>
+    </view>
+
+    <view class="card glossary-card">
+      <text class="section-title">术语速览</text>
+      <view class="glossary-row" wx:for="{{glossary}}" wx:key="term">
+        <text class="glossary-term">{{item.term}}</text>
+        <text class="glossary-desc">{{item.description}}</text>
+      </view>
+    </view>
+  </block>
+</view>
