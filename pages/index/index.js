@@ -100,16 +100,16 @@ const GLOSSARY = [
  */
 const REGRESSION_MODEL = {
   female: [
-    { range: [20, 34], beta: { IVCT: 0.23, LVET: 1.43, IVRT: 0.37 }, corr: { IVCT: 53, LVET: 384, IVRT: 105 } },
-    { range: [35, 49], beta: { IVCT: 0.22, LVET: 1.37, IVRT: 0.41 }, corr: { IVCT: 54, LVET: 384, IVRT: 115 } },
-    { range: [50, 64], beta: { IVCT: 0.22, LVET: 1.56, IVRT: 0.26 }, corr: { IVCT: 56, LVET: 399, IVRT: 120 } },
-    { range: [65, 100], beta:{ IVCT: 0.11, LVET: 1.83, IVRT: 0.53 }, corr: { IVCT: 49, LVET: 415, IVRT: 149 } },
+    { range: [20, 34], beta: { IVCT: 0.23, LVET: 1.43, IVRT: 0.37 }, corr: { IVCT: 53, LVET: 384, IVRT: 105 } }, // n=348
+    { range: [35, 49], beta: { IVCT: 0.22, LVET: 1.37, IVRT: 0.41 }, corr: { IVCT: 54, LVET: 384, IVRT: 115 } }, // n=331
+    { range: [50, 64], beta: { IVCT: 0.22, LVET: 1.56, IVRT: 0.26 }, corr: { IVCT: 56, LVET: 399, IVRT: 120 } }, // n=364
+    { range: [65, 100], beta:{ IVCT: 0.11, LVET: 1.83, IVRT: 0.53 }, corr: { IVCT: 49, LVET: 415, IVRT: 149 } }, // n=158
   ],
   male: [
-    { range: [20, 34], beta: { IVCT: 0.05, LVET: 1.17, IVRT: 0.28 }, corr: { IVCT: 41, LVET: 356, IVRT: 102 } },
-    { range: [35, 49], beta: { IVCT: 0.30, LVET: 1.25, IVRT: 0.56 }, corr: { IVCT: 56, LVET: 363, IVRT: 131 } },
-    { range: [50, 64], beta: { IVCT: 0.19, LVET: 1.67, IVRT: 0.24 }, corr: { IVCT: 51, LVET: 391, IVRT: 124 } },
-    { range: [65, 100], beta:{ IVCT: 0.01, LVET: 1.73, IVRT: 0.84 }, corr: { IVCT: 39, LVET: 401, IVRT: 172 } },
+    { range: [20, 34], beta: { IVCT: 0.05, LVET: 1.17, IVRT: 0.28 }, corr: { IVCT: 41, LVET: 356, IVRT: 102 } }, // n=207
+    { range: [35, 49], beta: { IVCT: 0.30, LVET: 1.25, IVRT: 0.56 }, corr: { IVCT: 56, LVET: 363, IVRT: 131 } }, // n=235
+    { range: [50, 64], beta: { IVCT: 0.19, LVET: 1.67, IVRT: 0.24 }, corr: { IVCT: 51, LVET: 391, IVRT: 124 } }, // n=199
+    { range: [65, 100], beta:{ IVCT: 0.01, LVET: 1.73, IVRT: 0.84 }, corr: { IVCT: 39, LVET: 401, IVRT: 172 } }, // n=112
   ],
 };
 
