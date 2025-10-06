@@ -95,8 +95,9 @@
           <text class="field-hint optional">Optional</text>
         </view>
         <view class="field-control">
-          <input class="input" type="number" value="{{hrAvg}}" data-field="hrAvg" bindinput="handleInput" />
-          <text class="field-unit">bpm</text>
+          <input class="input" type="number" placeholder="" value="{{hrAvg}}" data-field="hrAvg" bindinput="handleInput" />
+          <text wx:if="{{!hrAvg}}" class="optional-placeholder">可选</text>
+          <view class="field-unit">bpm</view>
         </view>
       </view>
     </view>

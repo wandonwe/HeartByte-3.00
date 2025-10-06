@@ -331,6 +331,21 @@ page {
   box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.45), 0 14rpx 26rpx rgba(15, 23, 42, 0.08);
 }
 
+.field-control {
+  position: relative; /* 为内部绝对定位的元素提供基准 */
+}
+
+.optional-placeholder {
+  position: absolute;
+  left: 24rpx; /* 与输入文本对齐 */
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 30rpx;
+  color: #94a3b8;
+  opacity: 0.8;
+  pointer-events: none; /* 允许点击穿透，聚焦到输入框 */
+}
+
 .input-card .field-control .input {
   flex: 1;
   background: transparent;
