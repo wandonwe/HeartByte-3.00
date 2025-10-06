@@ -23,10 +23,15 @@ const HEART_ICON_SVG =
         <stop offset="50%" stop-color="#ff2d67"/>
         <stop offset="100%" stop-color="#c3134d"/>
       </linearGradient>
+      <radialGradient id="heartHighlight" cx="30%" cy="25%" r="65%">
+        <stop offset="0%" stop-color="rgba(255, 255, 255, 0.5)"/>
+        <stop offset="100%" stop-color="rgba(255, 107, 107, 0)" />
+      </radialGradient>
       <filter id="lift" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="rgba(255, 45, 103, 0.4)"/></filter>
     </defs>
     <path filter="url(#lift)" d="M60 105C49.6 95.6 32 82.4 32 66c0-10.3 7.6-18.6 17.8-18.6 6.2 0 11.6 3.2 14.9 8.6 3.3-5.3 8.7-8.6 14.9-8.6 10.2 0 17.8 8.3 17.8 18.6 0 16.4-17.6 29.6-28 39z" fill="url(#heartGrad)"/>
-    <g transform="translate(4, 7)">
+    <path d="M60 105C49.6 95.6 32 82.4 32 66c0-10.3 7.6-18.6 17.8-18.6 6.2 0 11.6 3.2 14.9 8.6 3.3-5.3 8.7-8.6 14.9-8.6 10.2 0 17.8 8.3 17.8 18.6 0 16.4-17.6 29.6-28 39z" fill="url(#heartHighlight)"/>
+    <g transform="translate(6, 7)">
       <path d="M42 68 h10 l4-6 l6 14 l4-8 h10" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
   </svg>
@@ -89,25 +94,43 @@ const GLOSSARY = [
   { term: 'IVRT', description: '等容舒张期：主动脉瓣关闭到二尖瓣开启的时间。' },
 ];
 
+// 算法模型：回归系数配置
+// 基于 Schmidt et al. (Clin Res Cardiol, 2023)
+const REGRESSION_MODEL = {
+  female: {
+    IVRT_corr_base: 113,
+    IVRT_beta: 0.30,
+    IVRT_age_coeff: 0.35,
+    IVCT_corr_base: 52,
+    IVCT_beta: 0.15,
+    IVCT_age_coeff: 0.10,
+    LVET_corr_base: 393,
+    LVET_beta: 1.4,
+  },
+  male: {
+    IVRT_corr_base: 111,
+    IVRT_beta: 0.19,
+    IVRT_age_coeff: 0.35,
+    IVCT_corr_base: 48,
+    IVCT_beta: 0.15,
+    IVCT_age_coeff: 0.00,
+    LVET_corr_base: 388,
+    LVET_beta: 1.4,
+  },
+};
+
 // 计算：单一心率下的时间点
 function computeOne(sex, age, HR) {
-  const IVRT_corr_base = sex === 'female' ? 113 : 111;
-  const IVRT_beta = sex === 'female' ? 0.30 : 0.19;
-  const IVRT_age_coeff = 0.35;
+  // 从配置中获取对应性别的系数
+  const coeffs = REGRESSION_MODEL[sex];
 
-  const IVCT_corr_base = sex === 'female' ? 52 : 48;
-  const IVCT_beta = 0.15;
-  const IVCT_age_coeff = sex === 'female' ? 0.10 : 0.00;
+  // 使用系数进行计算
+  const ivrt_corr = coeffs.IVRT_corr_base + coeffs.IVRT_age_coeff * (age - 40);
+  const ivct_corr = coeffs.IVCT_corr_base + coeffs.IVCT_age_coeff * (age - 40);
 
-  const LVET_corr_base = sex === 'female' ? 393 : 388;
-  const LVET_beta = 1.4;
-
-  const ivrt_corr = IVRT_corr_base + IVRT_age_coeff * (age - 40);
-  const ivct_corr = IVCT_corr_base + IVCT_age_coeff * (age - 40);
-
-  const ivrt_raw = ivrt_corr - IVRT_beta * HR;
-  const ivct_raw = ivct_corr - IVCT_beta * HR;
-  const lvet_raw = LVET_corr_base - LVET_beta * HR;
+  const ivrt_raw = ivrt_corr - coeffs.IVRT_beta * HR;
+  const ivct_raw = ivct_corr - coeffs.IVCT_beta * HR;
+  const lvet_raw = coeffs.LVET_corr_base - coeffs.LVET_beta * HR;
 
   const r_to_ivct_end = ivct_raw;
   const r_to_lvet_end = ivct_raw + lvet_raw;
@@ -162,10 +185,10 @@ Page({
   data: {
     sexOptions: SEX_OPTIONS,
     sexIndex: 1,
-    age: '40',
-    hrMax: '100',
-    hrMin: '80',
-    hrAvg: '90',
+    age: '',
+    hrMax: '',
+    hrMin: '',
+    hrAvg: '',
     results: null,
     showViz: false,
     timelineData: null,

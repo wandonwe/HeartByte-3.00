@@ -59,7 +59,7 @@
           <text class="field-hint">Years</text>
         </view>
         <view class="field-control">
-          <input class="input" type="number" value="{{age}}" placeholder="40" data-field="age" bindinput="handleInput" />
+          <input class="input" type="number" value="{{age}}" data-field="age" bindinput="handleInput" />
           <text class="field-unit">岁</text>
         </view>
       </view>
@@ -71,7 +71,7 @@
           <text class="field-hint">HRmax</text>
         </view>
         <view class="field-control">
-          <input class="input" type="number" value="{{hrMax}}" placeholder="100" data-field="hrMax" bindinput="handleInput" />
+          <input class="input" type="number" value="{{hrMax}}" data-field="hrMax" bindinput="handleInput" />
           <text class="field-unit">bpm</text>
         </view>
       </view>
@@ -83,7 +83,7 @@
           <text class="field-hint">HRmin</text>
         </view>
         <view class="field-control">
-          <input class="input" type="number" value="{{hrMin}}" placeholder="80" data-field="hrMin" bindinput="handleInput" />
+          <input class="input" type="number" value="{{hrMin}}" data-field="hrMin" bindinput="handleInput" />
           <text class="field-unit">bpm</text>
         </view>
       </view>
@@ -95,7 +95,7 @@
           <text class="field-hint optional">Optional</text>
         </view>
         <view class="field-control">
-          <input class="input" type="number" value="{{hrAvg}}" placeholder="可选" data-field="hrAvg" bindinput="handleInput" />
+          <input class="input" type="number" value="{{hrAvg}}" data-field="hrAvg" bindinput="handleInput" />
           <text class="field-unit">bpm</text>
         </view>
       </view>
