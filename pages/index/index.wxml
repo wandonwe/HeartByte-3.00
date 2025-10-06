@@ -114,7 +114,7 @@
     <view class="card timeline-card">
       <view class="timeline-heading">
         <view class="timeline-title">
-          <text class="section-title">机械相位预测结果</text>
+          <text class="section-title">预测结果</text>
           <text class="timeline-subtitle">IVCT · LVET · IVRT 随心率绘制，并展示关键机械相位重叠区间。</text>
         </view>
         <view class="timeline-overlap-summary" wx:if="{{results.overlapSummary}}">
