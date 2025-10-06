@@ -1,7 +1,10 @@
 <view class="page">
+  <!-- 顶部 Hero 区（品牌 + 标题 + 图标） -->
   <view class="hero-card">
     <view class="hero-sheen"></view>
-    <view class="hero-content">
+
+    <!-- 左列：文本区 -->
+    <view class="hero-content hero-text">
       <view class="hero-header">
         <view class="hero-brand-block">
           <text class="brand-main">HeartByte</text>
@@ -12,17 +15,20 @@
 
       <view class="hero-body">
         <view class="hero-textual">
-          <text class="hero-title">心跳节律预测计算器</text>
-          <text class="hero-subtitle">Calculations based on regression equations reported by Schmidt et al. (Clin Res Cardiol, 2023).</text>
-        </view>
-        <view class="hero-icon-wrap">
-          <view class="hero-glow"></view>
-          <image class="hero-icon" src="{{heroIcon}}" mode="aspectFit"></image>
+          <view class="hero-title one-line">心跳节律预测计算器</view>
+          <view class="hero-subtitle">{{heroSubtitle}}</view>
         </view>
       </view>
     </view>
+
+    <!-- 右列：图标区（不遮挡标题） -->
+    <view class="hero-icon-wrap">
+      <view class="hero-glow"></view>
+      <image class="hero-icon" src="{{heroIcon}}" mode="aspectFit" style="transform: scale({{pulseScale}});"></image>
+    </view>
   </view>
 
+  <!-- 输入卡片 -->
   <view class="card input-card">
     <view class="input-header">
       <view class="input-title-stack">
@@ -35,15 +41,16 @@
       </view>
     </view>
 
-    <text class="section-desc input-desc">填写下方字段并点击预测按钮以生成机械时相窗口。</text>
+    <text class="section-desc input-desc">填写下方字段并点击预测按钮以生成机械时相窗口。时间轴区域将自适应画布并可横向滚动查看完整范围。</text>
 
     <view class="input-grid">
+      <!-- 性别 -->
       <view class="field">
         <view class="field-header">
           <text class="field-name">性别</text>
           <text class="field-hint">Sex</text>
         </view>
-        <picker mode="selector" range="{{sexOptions}}" range-key="label" value="{{sexIndex}}" bindchange="handleSexChange" class="picker">
+        <picker class="picker" mode="selector" range="{{sexOptions}}" range-key="label" value="{{sexIndex}}" bindchange="handleSexChange">
           <view class="picker-display">
             <text class="picker-value-text">{{sexOptions[sexIndex].label}}</text>
             <view class="picker-arrow"></view>
@@ -51,46 +58,50 @@
         </picker>
       </view>
 
+      <!-- 年龄 -->
       <view class="field">
         <view class="field-header">
           <text class="field-name">年龄</text>
           <text class="field-hint">Years</text>
         </view>
         <view class="field-control">
-          <input type="number" class="input" value="{{age}}" placeholder="40" data-field="age" bindinput="handleInput" />
+          <input class="input" type="number" value="{{age}}" placeholder="40" data-field="age" bindinput="handleInput" />
           <text class="field-unit">岁</text>
         </view>
       </view>
 
+      <!-- HRmax -->
       <view class="field">
         <view class="field-header">
           <text class="field-name">最大心率</text>
           <text class="field-hint">HRmax</text>
         </view>
         <view class="field-control">
-          <input type="number" class="input" value="{{hrMax}}" placeholder="100" data-field="hrMax" bindinput="handleInput" />
+          <input class="input" type="number" value="{{hrMax}}" placeholder="100" data-field="hrMax" bindinput="handleInput" />
           <text class="field-unit">bpm</text>
         </view>
       </view>
 
+      <!-- HRmin -->
       <view class="field">
         <view class="field-header">
           <text class="field-name">最小心率</text>
           <text class="field-hint">HRmin</text>
         </view>
         <view class="field-control">
-          <input type="number" class="input" value="{{hrMin}}" placeholder="80" data-field="hrMin" bindinput="handleInput" />
+          <input class="input" type="number" value="{{hrMin}}" placeholder="80" data-field="hrMin" bindinput="handleInput" />
           <text class="field-unit">bpm</text>
         </view>
       </view>
 
+      <!-- HRavg (optional) -->
       <view class="field">
         <view class="field-header">
           <text class="field-name">平均心率</text>
           <text class="field-hint optional">Optional</text>
         </view>
         <view class="field-control">
-          <input type="number" class="input" value="{{hrAvg}}" placeholder="可选" data-field="hrAvg" bindinput="handleInput" />
+          <input class="input" type="number" value="{{hrAvg}}" placeholder="可选" data-field="hrAvg" bindinput="handleInput" />
           <text class="field-unit">bpm</text>
         </view>
       </view>
@@ -102,11 +113,13 @@
     </view>
   </view>
 
+  <!-- 结果区 -->
   <block wx:if="{{results}}">
+    <!-- 重叠卡片 -->
     <view class="card overlap-card">
       <view class="card-header">
-        <text class="section-title">{{results.overlapSection.title}}</text>
-        <view class="soft-pill" style="color: {{results.overlapSection.pill.color}}; background: {{results.overlapSection.pill.bgColor}};">{{results.overlapSection.pill.label}}</view>
+        <text class="section-title">重叠窗口</text>
+        <view class="soft-pill" style="color: #f97316; background: rgba(249,115,22,0.18);">IVCT · IVRT</view>
       </view>
       <view class="kv-list">
         <view class="kv-row" wx:for="{{results.overlapSection.items}}" wx:key="label">
@@ -117,6 +130,7 @@
       <text class="section-desc">{{results.overlapSection.description}}</text>
     </view>
 
+    <!-- HR 卡片 -->
     <block wx:for="{{results.hrSections}}" wx:key="key" wx:for-item="section">
       <view class="card metric-card">
         <view class="card-header">
@@ -132,13 +146,14 @@
       </view>
     </block>
 
+    <!-- 时间轴卡片（可横向滚动，避免裁切） -->
     <view class="card timeline-card">
       <view class="timeline-top">
         <view class="timeline-title">
           <text class="section-title">R 波对齐时间轴</text>
-          <text class="timeline-subtitle">IVCT · LVET · IVRT raw durations plotted per心率.</text>
+          <text class="timeline-subtitle">IVCT · LVET · IVRT 随心率绘制；可横向滚动查看完整范围。</text>
         </view>
-        <view class="timeline-chip">ECG aligned</view>
+        <button class="chip-btn" bindtap="handleExport">导出图表</button>
       </view>
 
       <view class="timeline-rates" wx:if="{{results.timelineMeta && results.timelineMeta.length}}">
@@ -148,51 +163,33 @@
         </view>
       </view>
 
-      <view class="timeline-legend">
-        <view class="legend-item">
-          <view class="legend-swatch phase-ivct"></view>
-          <text>IVCT</text>
+      <scroll-view scroll-x="true" class="timeline-scroll" enable-flex="true">
+        <view class="timeline-chart">
+          <canvas
+            class="timeline-canvas"
+            id="timelineCanvas"
+            canvas-id="timelineCanvas"
+            style="width: {{canvasDisplayWidth}}px; height: {{canvasHeight}}px;"
+            width="{{canvasPixelWidth}}"
+            height="{{canvasPixelHeight}}"
+          ></canvas>
         </view>
-        <view class="legend-item">
-          <view class="legend-swatch phase-lvet"></view>
-          <text>LVET</text>
-        </view>
-        <view class="legend-item">
-          <view class="legend-swatch phase-ivrt"></view>
-          <text>IVRT</text>
-        </view>
-        <view class="legend-item">
-          <view class="legend-swatch phase-overlap"></view>
-          <text>重叠窗口</text>
-        </view>
-      </view>
+      </scroll-view>
 
-      <view class="timeline-chart">
-        <canvas
-          canvas-id="timelineCanvas"
-          id="timelineCanvas"
-          class="timeline-canvas"
-          style="width: {{canvasDisplayWidth}}px; height: {{canvasHeight}}px;"
-          width="{{canvasPixelWidth}}"
-          height="{{canvasPixelHeight}}"
-        ></canvas>
-      </view>
-
-      <view class="timeline-overlap-cards" wx:if="{{results.overlapSection && results.overlapSection.items}}">
-        <view class="overlap-card-item" wx:for="{{results.overlapSection.items}}" wx:key="label">
-          <text class="overlap-name">{{item.label}}</text>
-          <text class="overlap-detail">{{item.value}}</text>
-        </view>
-      </view>
-
-      <text class="timeline-note">Validate predictions with clinical measurement when decisions rely on precise timings.</text>
+      <text class="timeline-note">提示：结果仅作研究/教学参考，临床决策需结合实测。</text>
     </view>
 
+    <!-- 术语说明（可折叠） -->
     <view class="card glossary-card">
-      <text class="section-title">术语速览</text>
-      <view class="glossary-row" wx:for="{{glossary}}" wx:key="term">
-        <text class="glossary-term">{{item.term}}</text>
-        <text class="glossary-desc">{{item.description}}</text>
+      <view class="glossary-header" bindtap="toggleGlossary">
+        <text class="section-title">术语速览</text>
+        <text class="glossary-toggle">{{glossaryOpen ? '收起' : '展开'}}</text>
+      </view>
+      <view wx:if="{{glossaryOpen}}">
+        <view class="glossary-row" wx:for="{{glossary}}" wx:key="term">
+          <text class="glossary-term">{{item.term}}</text>
+          <text class="glossary-desc">{{item.description}}</text>
+        </view>
       </view>
     </view>
   </block>
