@@ -109,37 +109,59 @@
   </view>
 
   <!-- 结果区 -->
-  <block wx:if="{{results}}">
+  <view class="results-section" wx:if="{{results}}">
     <!-- 重叠 + 时间轴 融合卡片 -->
     <view class="card timeline-card">
       <view class="timeline-heading">
-        <view class="timeline-title">
-          <text class="section-title">预测结果</text>
-          <text class="timeline-subtitle">IVCT · LVET · IVRT 随心率绘制，并展示关键机械相位重叠区间。</text>
+        <text class="section-title">预测结果</text>
+        <button class="timeline-export-btn" bindtap="handleExport">导出图表</button>
+      </view>
+
+      <!-- 顶部：重叠信息 -->
+      <view class="timeline-overlap-details">
+        <!-- IVCT 重叠 -->
+        <view class="overlap-detail-item">
+          <view class="card-header">
+            <view class="soft-pill" style="color: {{results.ivctOverlapSection.pill.color}}; background: {{results.ivctOverlapSection.pill.bgColor}};">
+              {{results.ivctOverlapSection.pill.label}}
+            </view>
+          </view>
+          <view class="kv-list">
+            <view class="kv-row" wx:for="{{results.ivctOverlapSection.items}}" wx:key="label" wx:for-item="row">
+              <text class="kv-label">{{row.label}}</text>
+              <text class="kv-value">{{row.value}}</text>
+            </view>
+          </view>
         </view>
-        <view class="timeline-overlap-summary" wx:if="{{results.overlapSummary}}">
-          <view class="overlap-chip overlap-{{item.tone}}" wx:for="{{results.overlapSummary}}" wx:key="label">
-            <text class="overlap-chip-label">{{item.label}}</text>
-            <text class="overlap-chip-value">{{item.value}}</text>
+        <!-- IVRT 重叠 -->
+        <view class="overlap-detail-item">
+          <view class="card-header">
+            <view class="soft-pill" style="color: {{results.ivrtOverlapSection.pill.color}}; background: {{results.ivrtOverlapSection.pill.bgColor}};">
+              {{results.ivrtOverlapSection.pill.label}}
+            </view>
+          </view>
+          <view class="kv-list">
+            <view class="kv-row" wx:for="{{results.ivrtOverlapSection.items}}" wx:key="label" wx:for-item="row">
+              <text class="kv-label">{{row.label}}</text>
+              <text class="kv-value">{{row.value}}</text>
+            </view>
           </view>
         </view>
       </view>
+
+      <!-- 底部：图表 -->
       <scroll-view scroll-x="true" class="timeline-scroll" enable-flex="true">
         <view class="timeline-chart">
           <canvas
             class="timeline-canvas"
             id="timelineCanvas"
-            canvas-id="timelineCanvas"
+            type="2d"
             style="width: {{canvasDisplayWidth}}px; height: {{canvasHeight}}px;"
-            width="{{canvasPixelWidth}}"
-            height="{{canvasPixelHeight}}"
           ></canvas>
         </view>
       </scroll-view>
 
-      <text class="overlap-description">{{results.overlapSection.description}}</text>
       <text class="timeline-note">提示：结果仅作研究/教学参考，临床决策需结合实测。</text>
-      <button class="timeline-export-btn" bindtap="handleExport">导出图表</button>
     </view>
 
     <!-- HR 卡片 -->
@@ -147,7 +169,7 @@
       <view class="card metric-card">
         <view class="card-header">
           <text class="section-title">{{section.title}}</text>
-          <view class="soft-pill" style="color: {{section.color}}; background: {{section.bgColor}};">{{section.bpmLabel}}</view>
+          <view class="soft-pill" data-tone="{{section.key}}">{{section.bpmLabel}}</view>
         </view>
         <view class="kv-list">
           <view class="kv-row" wx:for="{{section.items}}" wx:key="label" wx:for-item="row">
@@ -171,5 +193,5 @@
         </view>
       </view>
     </view>
-  </block>
+  </view>
 </view>

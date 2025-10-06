@@ -386,6 +386,17 @@ page {
 .form-hint { font-size: 22rpx; color: #6c7a92; }
 
 /* ==========================================================================
+   Results Section
+   ========================================================================== */
+.results-section {
+  display: flex;
+  flex-direction: column;
+  gap: 28rpx;
+}
+
+.results-header { display: flex; flex-direction: column; gap: 12rpx; }
+
+/* ==========================================================================
    Cards (Results)
    ========================================================================== */
 .card-header {
@@ -399,7 +410,15 @@ page {
 .card-header .section-desc { max-width: 480rpx; }
 
 .overlap-card { background: linear-gradient(180deg, #fff7ed 0%, #ffffff 70%); }
-.metric-card  { background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, #f8fafc 100%); }
+.metric-card  {
+  padding: 40rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.7) 100%);
+  border: 1rpx solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12rpx);
+}
+.metric-card .kv-list {
+  margin-top: 24rpx;
+}
 
 /* Timeline */
 .timeline-card {
@@ -428,36 +447,12 @@ page {
   pointer-events: none;
 }
 
-
 .timeline-heading {
   display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
-  gap: 18rpx;
-  padding: 24rpx;
-  border-radius: 36rpx;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(222, 235, 255, 0.52) 48%, rgba(193, 220, 255, 0.32) 100%);
-  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.35), 0 24rpx 60rpx rgba(15, 36, 94, 0.15);
-  backdrop-filter: blur(28rpx) saturate(150%);
   position: relative;
   z-index: 1;
-}
-
-.timeline-title {
-  flex: 1 1 320rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-  padding: 6rpx 12rpx;
-}
-
-.timeline-title .section-title { white-space: nowrap; }
-.timeline-subtitle {
-  font-size: 22rpx;
-  color: rgba(71, 85, 105, 0.82);
-  line-height: 1.5;
 }
 
 .timeline-overlap-summary {
@@ -511,11 +506,39 @@ page {
 .timeline-scroll {
   width: 100%;
   overflow: hidden;
-  border-radius: 34rpx;
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.85) 0%, rgba(213, 230, 255, 0.35) 100%);
-  box-shadow: inset 0 0 0 1rpx rgba(209, 229, 255, 0.45);
-  backdrop-filter: blur(26rpx) saturate(140%);
-  padding: 18rpx;
+  border-radius: 36rpx;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(222, 235, 255, 0.52) 48%, rgba(193, 220, 255, 0.32) 100%);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.35), 0 24rpx 60rpx rgba(15, 36, 94, 0.15);
+  backdrop-filter: blur(28rpx) saturate(150%);
+  position: relative;
+  z-index: 1;
+}
+
+.timeline-overlap-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.overlap-detail-item {
+  padding: 24rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1rpx solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12rpx 24rpx rgba(30, 64, 175, 0.08);
+}
+
+.overlap-detail-item .card-header {
+  margin-bottom: 0;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.overlap-detail-item .section-title {
+  font-size: 26rpx;
 }
 
 .timeline-chart {
@@ -543,7 +566,7 @@ page {
 }
 
 .timeline-export-btn {
-  align-self: flex-end;
+  /* align-self: flex-end; */
   padding: 16rpx 42rpx;
   border-radius: 999rpx;
   font-size: 24rpx;
@@ -553,13 +576,22 @@ page {
     linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(198, 222, 255, 0.55) 100%);
   box-shadow: inset 0 0 0 1rpx rgba(148, 181, 232, 0.35), 0 22rpx 48rpx rgba(37, 99, 235, 0.18);
   backdrop-filter: blur(24rpx) saturate(150%);
-  margin-top: 8rpx;
 }
+.timeline-export-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: inset 0 0 0 1rpx rgba(148, 181, 232, 0.35), 0 16rpx 32rpx rgba(37, 99, 235, 0.15);
+}
+
 
 /* ==========================================================================
    Key-Value List
    ========================================================================== */
 .soft-pill { padding: 12rpx 24rpx; border-radius: 999rpx; font-size: 24rpx; font-weight: 600; }
+
+/* HR Tones for soft-pill */
+.soft-pill[data-tone="min"] { color: #3b82f6; background-color: rgba(59, 130, 246, 0.15); }
+.soft-pill[data-tone="avg"] { color: #8b5cf6; background-color: rgba(139, 92, 246, 0.15); }
+.soft-pill[data-tone="max"] { color: #c026d3; background-color: rgba(192, 38, 211, 0.15); }
 
 .kv-list { margin-top: 12rpx; display: flex; flex-direction: column; }
 
@@ -583,7 +615,15 @@ page {
 /* ==========================================================================
    Glossary
    ========================================================================== */
-.glossary-card { display: flex; flex-direction: column; gap: 20rpx; }
+.glossary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  padding: 40rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(248, 250, 252, 0.6) 100%);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12rpx);
+}
 
 
 .glossary-row {

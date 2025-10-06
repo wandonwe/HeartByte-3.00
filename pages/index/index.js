@@ -46,19 +46,19 @@ const HEART_ICON_SVG =
 
 // 统一色板
 const COLOR_TOKENS = {
-  ivct: { primary: '#2563eb', soft: 'rgba(37, 99, 235, 0.16)' },
-  lvet: { primary: '#0f766e', soft: 'rgba(15, 118, 110, 0.16)' },
-  ivrt: { primary: '#7c3aed', soft: 'rgba(124, 58, 237, 0.16)' },
-  overlap: { primary: '#f97316', soft: 'rgba(249, 115, 22, 0.18)' },
-  minCard: { primary: '#2563eb', soft: 'rgba(37, 99, 235, 0.12)' },
-  maxCard: { primary: '#6366f1', soft: 'rgba(99, 102, 241, 0.12)' },
-  avgCard: { primary: '#14b8a6', soft: 'rgba(20, 184, 166, 0.12)' },
+  ivct: { primary: '#2563eb', dark: '#1d4ed8', soft: 'rgba(37, 99, 235, 0.12)' },
+  lvet: { primary: '#0f766e', dark: '#047857', soft: 'rgba(15, 118, 110, 0.12)' },
+  ivrt: { primary: '#7c3aed', dark: '#6d28d9', soft: 'rgba(124, 58, 237, 0.12)' },
+  overlap: { primary: '#f97316', soft: 'rgba(249, 115, 22, 0.1)' },
+  minCard: { primary: '#3b82f6', soft: 'rgba(59, 130, 246, 0.15)' }, // 明亮的蓝色
+  avgCard: { primary: '#8b5cf6', soft: 'rgba(139, 92, 246, 0.15)' }, // 中间调的蓝紫色
+  maxCard: { primary: '#c026d3', soft: 'rgba(192, 38, 211, 0.15)' }, // 深洋红色
 };
 
 // 主题（字号/间距/网格/调色）
 const THEME = {
-  font: { title: 14, label: 12, lvet: 12, segment: 12 },
-  spacing: { leftPad: 110, rightPad: 36, topPad: 58, row: 74, barHeight: 18, base: 150 },
+  font: { title: 15, label: 13, axisLabel: 12, segment: 12, annotation: 11 },
+  spacing: { leftPad: 110, rightPad: 36, topPad: 72, row: 68, barHeight: 22, base: 150 },
   grid: { major: 100, minor: 50 },
   palette: {
     text: '#0f172a',
@@ -69,18 +69,17 @@ const THEME = {
     bgTop: '#f8fbff',
     bgBottom: '#e8f0ff',
     r: '#ef4444',
-    rowDefault: 'rgba(226,232,240,0.55)',
   },
 };
 
 // 文本样式助手
 function setBodyText(ctx, ratio = 1) {
-  ctx.setFillStyle(THEME.palette.text);
-  ctx.setFontSize(THEME.font.label * ratio);
+  ctx.fillStyle = THEME.palette.text;
+  ctx.font = `${THEME.font.label * ratio}px sans-serif`;
 }
 function setAxisText(ctx, ratio = 1) {
-  ctx.setFillStyle(THEME.palette.axisText);
-  ctx.setFontSize(THEME.font.label * ratio);
+  ctx.fillStyle = THEME.palette.axisText;
+  ctx.font = `${THEME.font.axisLabel * ratio}px sans-serif`;
 }
 
 // 术语表
@@ -147,10 +146,6 @@ function formatIntervalDetails(interval) {
   return `${fmt(interval.start)} → ${fmt(interval.end)}（持续 ${fmt(interval.length)}）`;
 }
 
-function formatOverlapChip(interval) {
-  if (!interval) return '无重叠';
-  return `${fmt(interval.start)} → ${fmt(interval.end)} ms（${fmt(interval.length)} ms）`;
-}
 function buildHrItems(data) {
   return [
     { label: 'IVCT 持续时间', value: formatMs(data.ivct_raw) },
@@ -189,21 +184,7 @@ Page({
 
   // 初始化：根据窗口宽度设定画布尺寸（1:1 buffer，避免裁切）
   onReady() {
-    try {
-      const info = wx.getSystemInfoSync();
-      const horizontalPadding = 56;
-      const availableWidth = Math.max(260, info.windowWidth - horizontalPadding);
-      const displayWidth = Math.min(700, availableWidth);
-      this.setData({
-        canvasDisplayWidth: displayWidth,
-        canvasPixelWidth: Math.round(displayWidth),
-        pixelRatio: 1,
-        canvasPixelHeight: Math.round(this.data.canvasHeight),
-      });
-      this._startPulse();
-    } catch (err) {
-      console.warn('system info failed', err);
-    }
+    this._startPulse();
   },
 
   onHide() { this._stopPulse(); },
@@ -264,51 +245,46 @@ Page({
         key: 'min',
         title: '最小心率',
         bpmLabel: `${fmt(lo.HR)} bpm`,
-        color: COLOR_TOKENS.minCard.primary,
-        bgColor: COLOR_TOKENS.minCard.soft,
         items: buildHrItems(lo),
       },
       {
         key: 'max',
         title: '最大心率',
         bpmLabel: `${fmt(hi.HR)} bpm`,
-        color: COLOR_TOKENS.maxCard.primary,
-        bgColor: COLOR_TOKENS.maxCard.soft,
         items: buildHrItems(hi),
       },
     ];
     if (avg) {
-      hrSections.push({
+      // 插入到中间，保持 min -> avg -> max 的顺序
+      hrSections.splice(1, 0, {
         key: 'avg',
         title: '平均心率',
         bpmLabel: `${fmt(avg.HR)} bpm`,
-        color: COLOR_TOKENS.avgCard.primary,
-        bgColor: COLOR_TOKENS.avgCard.soft,
         items: buildHrItems(avg),
       });
     }
 
-    const overlapItems = [
-      { label: 'IVCT 重叠', value: formatIntervalDetails(ivctOverlap) },
-      { label: 'IVRT 重叠', value: formatIntervalDetails(ivrtOverlap) },
-    ];
+    const ivctOverlapSection = {
+      title: '等容收缩期重叠窗口',
+      pill: { label: 'IVCT · 等容收缩期', color: COLOR_TOKENS.ivct.primary, bgColor: COLOR_TOKENS.ivct.soft },
+      items: [
+        { label: '重叠区间', value: formatIntervalDetails(ivctOverlap) },
+      ],
+    };
 
-    const overlapSummary = [
-      { label: 'IVCT 重叠', value: formatOverlapChip(ivctOverlap), tone: 'ivct' },
-      { label: 'IVRT 重叠', value: formatOverlapChip(ivrtOverlap), tone: 'ivrt' },
-    ];
-
-    const overlapSection = {
-      title: '重叠窗口',
-      pill: { label: 'IVCT 与 IVRT', color: COLOR_TOKENS.overlap.primary, bgColor: COLOR_TOKENS.overlap.soft },
-      items: overlapItems,
-      description: '比较 HRmin 与 HRmax 下收缩期与舒张期的重叠情况。',
+    const ivrtOverlapSection = {
+      title: '等容舒张期重叠窗口',
+      pill: { label: 'IVRT · 等容舒张期', color: COLOR_TOKENS.ivrt.primary, bgColor: COLOR_TOKENS.ivrt.soft },
+      items: [
+        { label: '重叠区间', value: formatIntervalDetails(ivrtOverlap) },
+      ],
+      description: '比较 HRmin 与 HRmax 下的等容舒张期重叠情况。',
     };
 
     const results = {
       hrSections,
-      overlapSection,
-      overlapSummary,
+      ivctOverlapSection,
+      ivrtOverlapSection,
       timelineMeta: [
         { key: 'min', label: 'HRmin', value: `${fmt(lo.HR)} bpm`, tone: 'min' },
         { key: 'max', label: 'HRmax', value: `${fmt(hi.HR)} bpm`, tone: 'max' },
@@ -322,17 +298,21 @@ Page({
     const timelineData = { lo, hi, avg, ivctOverlap, ivrtOverlap };
 
     // 画布高度：随行数动态增加
-    const overlapRow = ivctOverlap || ivrtOverlap ? 1 : 0;
     const hrRowCount = avg ? 3 : 2;
-    const totalRows = overlapRow + hrRowCount;
+    const totalRows = hrRowCount;
     const computedHeight = THEME.spacing.base + totalRows * THEME.spacing.row;
-    const hasOverlap = Boolean(overlapRow);
+    const hasOverlap = ivctOverlap || ivrtOverlap; // Keep for height logic
     const minHeight = hasOverlap ? 280 : 260;
     const maxHeight = hasOverlap ? 360 : 320;
     const clampedHeight = Math.min(Math.max(computedHeight, minHeight), maxHeight);
     const canvasHeight = Math.round(clampedHeight);
     const pixelRatio = this.data.pixelRatio || 1;
-    const canvasPixelHeight = Math.round(canvasHeight * pixelRatio);
+
+    // For new 2D canvas, we update the node's height directly
+    if (this.canvasNode) {
+      this.canvasNode.width = this.data.canvasDisplayWidth * pixelRatio;
+      this.canvasNode.height = canvasHeight * pixelRatio;
+    }
 
     this.setData(
       {
@@ -340,13 +320,42 @@ Page({
         timelineData,
         showViz: true,
         canvasHeight,
-        canvasPixelHeight,
       },
-      () => {
-        this.drawTimeline();
-        this._startPulse();
+      async () => {
+        // If canvas is not initialized, do it now.
+        if (!this.canvasNode) {
+          await this._initCanvas();
+        }
+        this.drawTimeline(); // Now draw
+        this._startPulse(); // Restart pulse with new HR values
       }
     );
+  },
+
+  // Helper to initialize the canvas node and context
+  _initCanvas() {
+    return new Promise((resolve) => {
+      const query = wx.createSelectorQuery();
+      query.select('#timelineCanvas')
+        .fields({ node: true, size: true })
+        .exec((res) => {
+          if (!res[0] || !res[0].node) {
+            console.error("Could not retrieve canvas node.");
+            resolve(false);
+            return;
+          }
+          const canvas = res[0].node;
+          const ctx = canvas.getContext('2d');
+          const pixelRatio = wx.getDeviceInfo().pixelRatio || 1;
+
+          canvas.width = this.data.canvasDisplayWidth * pixelRatio;
+          canvas.height = this.data.canvasHeight * pixelRatio;
+
+          this.canvasNode = canvas;
+          this.canvasCtx = ctx;
+          resolve(true);
+        });
+    });
   },
 
   toggleGlossary() {
@@ -379,58 +388,56 @@ Page({
   },
 
   handleExport() {
+    if (!this.canvasNode) {
+      wx.showToast({ title: '图表尚未准备好', icon: 'none' });
+      return;
+    }
     wx.canvasToTempFilePath({
-      canvasId: 'timelineCanvas',
+      canvas: this.canvasNode,
       fileType: 'png',
       quality: 1,
       success: (res) => {
         const path = res.tempFilePath;
-        if (wx.saveImageToPhotosAlbum) {
-          wx.saveImageToPhotosAlbum({
-            filePath: path,
-            success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
-            fail: () => wx.previewImage({ urls: [path] })
-          });
-        } else {
-          wx.previewImage({ urls: [path] });
-        }
+        wx.saveImageToPhotosAlbum({
+          filePath: path,
+          success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+          fail: (err) => {
+            // 如果用户拒绝授权，则使用预览图片作为备选方案
+            if (err.errMsg.includes('auth deny')) {
+              wx.previewImage({ urls: [path] });
+            }
+          },
+        });
       },
       fail: (err) => {
         console.warn('export failed', err);
         wx.showToast({ title: '导出失败', icon: 'none' });
-      }
-    }, this);
+      },
+    });
   },
 
   // 绘图：时间轴
   drawTimeline() {
     const timelineData = this.data.timelineData;
-    if (!timelineData) return;
+    if (!timelineData || !this.canvasCtx || !this.canvasNode) return;
 
     const { lo, hi, avg, ivctOverlap, ivrtOverlap } = timelineData;
 
-    // 画布上下文与归一化
-    const width = this.data.canvasPixelWidth || 700;
-    const theight = this.data.canvasPixelHeight || Math.round(this.data.canvasHeight * this.data.pixelRatio);
-    const height = theight; // 避免多处计算
-    const ctx = wx.createCanvasContext('timelineCanvas', this);
-    ctx.clearRect(0, 0, width, height);
+    const ctx = this.canvasCtx;
+    const { width, height } = this.canvasNode;
+    const pixelRatio = this.data.pixelRatio || 1;
 
-    const viewW = this.data.canvasDisplayWidth || width;
-    const viewH = this.data.canvasHeight || height;
-    if (width !== viewW || height !== viewH) {
-      const sx = viewW / width;
-      const sy = viewH / height;
-      ctx.scale(sx, sy);
-    }
-    const WIDTH = this.data.canvasDisplayWidth || width;
-    const HEIGHT = this.data.canvasHeight || height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.save(); // Save the clean state
+    ctx.scale(pixelRatio, pixelRatio); // Apply DPI scaling
+    const WIDTH = this.data.canvasDisplayWidth;
+    const HEIGHT = this.data.canvasHeight;
 
     // 背景渐变
     const bgGradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
     bgGradient.addColorStop(0, THEME.palette.bgTop);
     bgGradient.addColorStop(1, THEME.palette.bgBottom);
-    ctx.setFillStyle(bgGradient);
+    ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     // 横轴刻度范围
@@ -449,15 +456,14 @@ Page({
     // 尺度与像素比
     const displayWidth = this.data.canvasDisplayWidth || width;
     const scaleFactor = displayWidth / 700;
-    const pixelRatio = this.data.pixelRatio || 1;
 
     // 动态左留白：根据标签宽度测量
     const labelStrings = [];
     if (ivctOverlap || ivrtOverlap) labelStrings.push('重叠窗口');
     labelStrings.push(`HRmin (${fmt(lo.HR)} bpm)`, `HRmax (${fmt(hi.HR)} bpm)`);
     if (avg) labelStrings.push(`HRavg (${fmt(avg.HR)} bpm)`);
-
-    ctx.setFontSize(THEME.font.label * pixelRatio);
+    
+    ctx.font = `${THEME.font.label}px sans-serif`; // Use logical pixels for measureText
     let maxLabelW = 0;
     labelStrings.forEach((s) => {
       const m = ctx.measureText(s);
@@ -467,45 +473,46 @@ Page({
     const labelGap = 28 * pixelRatio; // label 与轴之间留白
     const safety = 18 * pixelRatio;   // R 点/虚线预留
     const leftPad = Math.round(
-      Math.max(80 * pixelRatio, THEME.spacing.leftPad * scaleFactor * pixelRatio, maxLabelW + labelGap + safety)
+      Math.max(80, THEME.spacing.leftPad * scaleFactor, maxLabelW / pixelRatio + labelGap / pixelRatio + safety / pixelRatio)
     );
-    const rightPad = Math.round(Math.max(24 * pixelRatio, THEME.spacing.rightPad * scaleFactor * pixelRatio));
-    const topPad = Math.round(Math.max(46 * pixelRatio, THEME.spacing.topPad * scaleFactor * pixelRatio));
+    const rightPad = Math.round(Math.max(24, THEME.spacing.rightPad * scaleFactor));
+    const topPad = Math.round(Math.max(46, THEME.spacing.topPad * scaleFactor));
     const axisY = topPad;
-    const rowSpacing = Math.round(THEME.spacing.row * scaleFactor * pixelRatio);
-    const barHeight = Math.max(14, Math.round(THEME.spacing.barHeight * pixelRatio));
+    const rowSpacing = Math.round(THEME.spacing.row * scaleFactor);
+    const barHeight = Math.max(14, Math.round(THEME.spacing.barHeight));
+    const headerOffset = 28;
 
     const scale = (t) => leftPad + ((WIDTH - leftPad - rightPad) * (t - minTick)) / range;
 
     // 标题
-    ctx.setFontSize(THEME.font.title * pixelRatio);
-    ctx.setFillStyle(THEME.palette.text);
-    ctx.fillText('时间轴 (ms · 相对 R 波)', Math.max(16 * pixelRatio, leftPad), topPad - 26 * pixelRatio);
+    ctx.font = `${THEME.font.title}px sans-serif`;
+    ctx.fillStyle = THEME.palette.text;
+    ctx.fillText('时间轴 (ms · 相对 R 波)', Math.max(16, leftPad), topPad - 26);
 
     // 横轴与网格
-    ctx.setStrokeStyle(THEME.palette.axisLine);
-    ctx.setLineWidth(1);
+    ctx.strokeStyle = THEME.palette.axisLine;
+    ctx.lineWidth = 1 / pixelRatio; // Ensure 1 physical pixel
     ctx.beginPath();
     ctx.moveTo(scale(minTick), axisY);
     ctx.lineTo(scale(maxTick), axisY);
     ctx.stroke();
 
-    ctx.setFontSize(THEME.font.label * pixelRatio);
-    ctx.setTextAlign('center');
+    ctx.font = `${THEME.font.axisLabel}px sans-serif`;
+    ctx.textAlign = 'center';
     for (let t = minTick; t <= maxTick; t += THEME.grid.minor) {
       const x = scale(t);
       const isMajor = t % THEME.grid.major === 0;
-      ctx.setStrokeStyle(isMajor ? THEME.palette.gridMajor : THEME.palette.gridMinor);
+      ctx.strokeStyle = isMajor ? THEME.palette.gridMajor : THEME.palette.gridMinor;
       ctx.beginPath();
       ctx.moveTo(x, axisY);
       ctx.lineTo(x, HEIGHT - 48);
       ctx.stroke();
       if (isMajor) {
-        ctx.setFillStyle(THEME.palette.axisText);
-        ctx.fillText(String(t), x, axisY - 10 * pixelRatio);
+        ctx.fillStyle = THEME.palette.axisText;
+        ctx.fillText(String(t), x, axisY - 12);
       }
     }
-    ctx.setTextAlign('left');
+    ctx.textAlign = 'left';
 
     // 绘制圆角矩形
     function fillRoundedRect(ctxInstance, x, y, w, h, r) {
@@ -525,12 +532,19 @@ Page({
     }
 
     // 绘制一个圆角条段（支持自定义高度）
-    function drawRoundedBar(x1, x2, y, color, heightPx = barHeight) {
+    function drawRoundedBar(x1, x2, y, color, darkColor, heightPx = barHeight, isGhost = false) {
       const widthPx = Math.max(0, x2 - x1);
       if (widthPx <= 0 || heightPx <= 0) return null;
 
-      const radius = Math.min(10 * pixelRatio, widthPx / 2, heightPx / 2);
-      ctx.setFillStyle(color);
+      const radius = Math.min(10, widthPx / 2, heightPx / 2);
+      if (!isGhost && darkColor) {
+        const gradient = ctx.createLinearGradient(x1, y, x1, y + heightPx);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, darkColor);
+        ctx.fillStyle = gradient;
+      } else {
+        ctx.fillStyle = color;
+      }
       ctx.beginPath();
       ctx.moveTo(x1 + radius, y);
       ctx.lineTo(x2 - radius, y);
@@ -548,144 +562,140 @@ Page({
     }
 
     // 行：相段（IVCT / LVET / IVRT）
-    function drawPhaseRow(label, data, rowIndex, bgColor) {
-      const headerOffset = 28 * pixelRatio;
-      const gutter = 16 * pixelRatio;
-      const blockHeight = barHeight + 32 * pixelRatio;
-      const corner = 14 * pixelRatio;
-
+    function drawPhaseRow(label, data, compareData, rowIndex) {
       const baseY = axisY + headerOffset + rowIndex * rowSpacing;
-      const backgroundY = baseY - gutter;
-
-      ctx.setFillStyle(bgColor || THEME.palette.rowDefault);
-      fillRoundedRect(
-        ctx,
-        Math.max(0, leftPad - gutter),
-        backgroundY,
-        Math.max(0, WIDTH - leftPad - rightPad + gutter * 2),
-        blockHeight,
-        corner
-      );
 
       setBodyText(ctx, pixelRatio);
-      ctx.fillText(label, 24 * pixelRatio, baseY + barHeight - 4 * pixelRatio);
+      ctx.textBaseline = 'middle'; // 垂直居中对齐
+      ctx.fillText(label, 24, baseY);
 
-      // R 点
-      const startX = scale(0);
-      ctx.setFillStyle(COLOR_TOKENS.ivct.primary);
-      ctx.beginPath();
-      ctx.arc(startX, baseY + barHeight / 2, barHeight / 2, 0, Math.PI * 2);
-      ctx.fill();
+      // --- 核心改动：绘制“幽灵”对比条 ---
+      if (compareData) {
+        const ghostHeight = barHeight;
+        const ghostY = baseY - ghostHeight / 2;
+        drawRoundedBar(
+          scale(0), scale(compareData.r_to_ivct_end),
+          ghostY, COLOR_TOKENS.ivct.soft, null, ghostHeight, true
+        );
+        drawRoundedBar(
+          scale(compareData.r_to_ivct_end), scale(compareData.r_to_lvet_end),
+          ghostY, COLOR_TOKENS.lvet.soft, null, ghostHeight, true
+        );
+        drawRoundedBar(
+          scale(compareData.r_to_ivrt_start), scale(compareData.r_to_ivrt_end),
+          ghostY, COLOR_TOKENS.ivrt.soft, null, ghostHeight, true
+        );
+      }
 
-      // 三相条段
-      const ivctSpan = drawRoundedBar(scale(0), scale(data.r_to_ivct_end), baseY, COLOR_TOKENS.ivct.primary);
+      // 绘制主要的三相条段 (覆盖在幽灵条之上)
+      const barY = baseY - barHeight / 2;
+      const ivctSpan = drawRoundedBar(scale(0), scale(data.r_to_ivct_end), barY, COLOR_TOKENS.ivct.primary, COLOR_TOKENS.ivct.dark);
       const lvetSpan = drawRoundedBar(
         scale(data.r_to_ivct_end),
         scale(data.r_to_lvet_end),
-        baseY,
-        COLOR_TOKENS.lvet.primary
+        barY,
+        COLOR_TOKENS.lvet.primary,
+        COLOR_TOKENS.lvet.dark
       );
       const ivrtSpan = drawRoundedBar(
         scale(data.r_to_ivrt_start),
         scale(data.r_to_ivrt_end),
-        baseY,
-        COLOR_TOKENS.ivrt.primary
+        barY,
+        COLOR_TOKENS.ivrt.primary,
+        COLOR_TOKENS.ivrt.dark
       );
 
       // 段标签
-      ctx.setTextAlign('center');
-      ctx.setFillStyle('#f8fafc');
-      ctx.setFontSize(THEME.font.segment * pixelRatio);
-      if (ivctSpan) ctx.fillText('IVCT', (ivctSpan.x1 + ivctSpan.x2) / 2, baseY + barHeight - 4 * pixelRatio);
-      if (lvetSpan) ctx.fillText('LVET', (lvetSpan.x1 + lvetSpan.x2) / 2, baseY + barHeight - 4 * pixelRatio);
-      if (ivrtSpan) ctx.fillText('IVRT', (ivrtSpan.x1 + ivrtSpan.x2) / 2, baseY + barHeight - 4 * pixelRatio);
-      ctx.setTextAlign('left');
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffffff'; // 使用纯白色以获得最大对比度
+      ctx.font = `${THEME.font.segment}px sans-serif`;
+      ctx.textBaseline = 'middle'; // 垂直居中对齐
+      const textY = baseY;
+      if (ivctSpan) ctx.fillText('IVCT', (ivctSpan.x1 + ivctSpan.x2) / 2, textY);
+      if (lvetSpan) ctx.fillText('LVET', (lvetSpan.x1 + lvetSpan.x2) / 2, textY);
+      if (ivrtSpan) ctx.fillText('IVRT', (ivrtSpan.x1 + ivrtSpan.x2) / 2, textY);
+      ctx.textAlign = 'left';
       setBodyText(ctx, pixelRatio);
     }
 
-    // 行：重叠
-    function drawOverlapRow(rowIndex) {
-      const headerOffset = 28 * pixelRatio;
-      const gutter = 16 * pixelRatio;
-      const corner = 14 * pixelRatio;
+    // 标注：重叠区间
+    function drawOverlapAnnotations() {
+      const annotationY = HEIGHT - 32; // 调整垂直位置
+      const drawAnnotation = (overlap, color, label) => {
+        if (!overlap) return;
+        const x1 = scale(overlap.start);
+        const x2 = scale(overlap.end);
+        const midX = (x1 + x2) / 2;
 
-      // Single compact block height; we will draw two thin bars inside the same row
-      const baseY = axisY + headerOffset + rowIndex * rowSpacing;
-      const backgroundY = baseY - gutter;
+        // 使用更深的颜色以获得更好的对比度
+        const darkColor = (label.includes('IVCT') ? COLOR_TOKENS.ivct.dark : COLOR_TOKENS.ivrt.dark);
 
-      ctx.setFillStyle(COLOR_TOKENS.overlap.soft);
-      fillRoundedRect(
-        ctx,
-        Math.max(0, leftPad - gutter),
-        backgroundY,
-        Math.max(0, WIDTH - leftPad - rightPad + gutter * 2),
-        barHeight + 32 * pixelRatio,
-        corner
-      );
+        ctx.strokeStyle = darkColor;
+        ctx.lineWidth = 1.5 / pixelRatio;
+        // Bracket lines
+        ctx.beginPath();
+        ctx.moveTo(x1, annotationY + 8);
+        ctx.lineTo(x1, annotationY);
+        ctx.moveTo(x2, annotationY + 8);
+        ctx.lineTo(x2, annotationY);
+        ctx.stroke();
+        // Connecting line
+        ctx.beginPath();
+        ctx.moveTo(x1, annotationY + 4);
+        ctx.lineTo(x2, annotationY + 4);
+        ctx.stroke();
 
-      // Title on the left
-      setBodyText(ctx, pixelRatio);
-      ctx.fillText('重叠窗口', 24 * pixelRatio, baseY + barHeight - 4 * pixelRatio);
+        // Text
+        ctx.fillStyle = darkColor;
+        ctx.font = `${THEME.font.annotation}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(
+          `${label}: ${fmt(overlap.start)} → ${fmt(overlap.end)} ms (${fmt(overlap.length)} ms)`,
+          midX,
+          annotationY + 14
+        );
+      };
 
-      // Two thin bars drawn within the same row
-      const thin = Math.max(10 * pixelRatio, Math.round(barHeight * 0.55));
-      const gap = 6 * pixelRatio;
-      // Center the two thin bars vertically within available bar slot
-      const totalThin = thin * 2 + gap;
-      const yStart = baseY + Math.max(0, (barHeight - totalThin) / 2);
-
-      ctx.setTextAlign('center');
-      ctx.setFontSize(THEME.font.segment * pixelRatio);
-
-      // IVCT overlap — use IVCT theme color
-      if (ivctOverlap) {
-        const s1 = drawRoundedBar(scale(ivctOverlap.start), scale(ivctOverlap.end), yStart, COLOR_TOKENS.ivct.primary, thin);
-        if (s1) {
-          ctx.setFillStyle('#ffffff');
-          ctx.fillText('IVCT overlap', (s1.x1 + s1.x2) / 2, yStart + thin - 4 * pixelRatio);
-        }
-      }
-
-      // IVRT overlap — use IVRT theme color
-      if (ivrtOverlap) {
-        const y2 = yStart + thin + gap;
-        const s2 = drawRoundedBar(scale(ivrtOverlap.start), scale(ivrtOverlap.end), y2, COLOR_TOKENS.ivrt.primary, thin);
-        if (s2) {
-          ctx.setFillStyle('#ffffff');
-          ctx.fillText('IVRT overlap', (s2.x1 + s2.x2) / 2, y2 + thin - 4 * pixelRatio);
-        }
-      }
-
-      ctx.setTextAlign('left');
-      setBodyText(ctx, pixelRatio);
+      drawAnnotation(ivctOverlap, COLOR_TOKENS.ivct.dark, 'IVCT 重叠');
+      drawAnnotation(ivrtOverlap, COLOR_TOKENS.ivrt.dark, 'IVRT 重叠');
+      ctx.textAlign = 'left'; // Reset
     }
 
     // 构造行并绘制
     const rows = [];
-    if (ivctOverlap || ivrtOverlap) rows.push({ type: 'overlap' });
-    rows.push({ type: 'hr', label: `HRmin (${fmt(lo.HR)} bpm)`, payload: lo, bg: COLOR_TOKENS.minCard.soft });
-    rows.push({ type: 'hr', label: `HRmax (${fmt(hi.HR)} bpm)`, payload: hi, bg: COLOR_TOKENS.maxCard.soft });
-    if (avg) rows.push({ type: 'hr', label: `HRavg (${fmt(avg.HR)} bpm)`, payload: avg, bg: COLOR_TOKENS.avgCard.soft });
+    rows.push({ type: 'hr', label: `HRmin (${fmt(lo.HR)} bpm)`, payload: lo, compare: hi });
+    if (avg) rows.push({ type: 'hr', label: `HRavg (${fmt(avg.HR)} bpm)`, payload: avg, compare: hi });
+    rows.push({ type: 'hr', label: `HRmax (${fmt(hi.HR)} bpm)`, payload: hi, compare: lo });
 
     rows.forEach((row, index) => {
-      if (row.type === 'overlap') drawOverlapRow(index);
-      else drawPhaseRow(row.label, row.payload, index, row.bg);
+      drawPhaseRow(row.label, row.payload, row.compare, index);
     });
 
     // R 垂直虚线 + 标记
     const rX = scale(0);
-    ctx.setStrokeStyle(THEME.palette.r);
-    if (ctx.setLineDash) ctx.setLineDash([6, 4], 0);
+    ctx.strokeStyle = THEME.palette.r;
+    ctx.lineDash = [6 / pixelRatio, 4 / pixelRatio];
     ctx.beginPath();
-    ctx.moveTo(rX, axisY - 14 * pixelRatio);
-    ctx.lineTo(rX, HEIGHT - 40 * pixelRatio);
+    ctx.moveTo(rX, axisY);
+    ctx.lineTo(rX, HEIGHT - 48); // Align with grid lines
     ctx.stroke();
-    if (ctx.setLineDash) ctx.setLineDash([], 0);
+    ctx.lineDash = [];
 
-    ctx.setFillStyle(THEME.palette.r);
-    ctx.setFontSize(THEME.font.label * pixelRatio);
-    ctx.fillText('R', rX + 6 * pixelRatio, axisY - 16 * pixelRatio);
+    ctx.fillStyle = THEME.palette.r;
+    ctx.font = `${THEME.font.axisLabel}px sans-serif`;
+    ctx.fillText('R', rX - 10, axisY - 12);
 
-    ctx.draw();
+    // 在每个泳道上标记 R 点
+    rows.forEach((_, index) => {
+      const baseY = axisY + headerOffset + index * rowSpacing;
+      ctx.fillStyle = THEME.palette.r;
+      ctx.beginPath();
+      ctx.arc(rX, baseY, 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    drawOverlapAnnotations();
+
+    ctx.restore(); // Restore the context to its original state
   },
 });
