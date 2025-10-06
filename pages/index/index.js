@@ -176,7 +176,7 @@ Page({
     pixelRatio: 1,
     glossary: GLOSSARY,
     heroIcon: HEART_ICON_SVG,
-    heroSubtitle: 'Calculations are based on regression equations reported by Schmidt et al. (Clin Res Cardiol, 2023).',
+    heroSubtitle: 'Regression equations from Schmidt et al. (Clin Res Cardiol, 2023).',
     glossaryOpen: false,
     pulseScale: 1,
     _pulseTimer: null,
