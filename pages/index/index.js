@@ -16,30 +16,18 @@ const SEX_OPTIONS = [
 const HEART_ICON_SVG =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
     <defs>
-      <linearGradient id="iceGrad" x1="10%" y1="0%" x2="90%" y2="100%">
-        <stop offset="0%" stop-color="#c9edff"/>
-        <stop offset="100%" stop-color="#63aaff"/>
-      </linearGradient>
-      <radialGradient id="iceHighlight" cx="25%" cy="20%" r="80%">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.95)"/>
-        <stop offset="100%" stop-color="rgba(255,255,255,0.12)"/>
-      </radialGradient>
       <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="#ff6b6b"/>
         <stop offset="50%" stop-color="#ff2d67"/>
         <stop offset="100%" stop-color="#c3134d"/>
       </linearGradient>
-      <filter id="lift" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="rgba(17, 43, 79, 0.35)"/>
-      </filter>
+      <filter id="lift" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="rgba(255, 45, 103, 0.4)"/></filter>
     </defs>
-    <g filter="url(#lift)">
-      <rect x="14" y="14" width="132" height="132" rx="34" fill="url(#iceGrad)" stroke="rgba(255,255,255,0.6)" stroke-width="4"/>
-      <rect x="28" y="28" width="104" height="104" rx="28" fill="url(#iceHighlight)" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
-      <path d="M80 116c-12.8-11.6-34-28-34-48 0-12.4 9.1-22.3 21.3-22.3 7.5 0 13.9 3.9 17.9 10.3 4-6.4 10.4-10.3 17.9-10.3 12.2 0 21.3 9.9 21.3 22.3 0 20-21.2 36.4-34 48z" fill="url(#heartGrad)"/>
-      <path d="M67 79h13l7-10.8 5.8 20.4 4.8-9.6h12.6" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path filter="url(#lift)" d="M60 105C49.6 95.6 32 82.4 32 66c0-10.3 7.6-18.6 17.8-18.6 6.2 0 11.6 3.2 14.9 8.6 3.3-5.3 8.7-8.6 14.9-8.6 10.2 0 17.8 8.3 17.8 18.6 0 16.4-17.6 29.6-28 39z" fill="url(#heartGrad)"/>
+    <g transform="translate(4, 7)">
+      <path d="M42 68 h10 l4-6 l6 14 l4-8 h10" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
   </svg>
 `);

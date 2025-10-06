@@ -23,7 +23,6 @@
 
     <!-- 右列：图标区（不遮挡标题） -->
     <view class="hero-icon-wrap">
-      <view class="hero-glow"></view>
       <image class="hero-icon" src="{{heroIcon}}" mode="aspectFit" style="transform: scale({{pulseScale}});"></image>
     </view>
   </view>
