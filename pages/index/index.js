@@ -228,29 +228,46 @@ Page({
 
   // 事件：计算预测
   handlePredict() {
-    const option = this.data.sexOptions[this.data.sexIndex] || this.data.sexOptions[0];
-    const sex = option.value;
+    const { sexIndex, sexOptions, age, hrMin, hrMax, hrAvg } = this.data;
 
-    const ageValue = parseFloat(this.data.age);
-    const age = Number.isFinite(ageValue) ? ageValue : 40;
+    // --- 增强的输入验证 ---
+    const validations = [
+      { value: age, name: '年龄', min: 18, max: 100, required: true },
+      { value: hrMin, name: '最小心率', min: 40, max: 220, required: true },
+      { value: hrMax, name: '最大心率', min: 40, max: 220, required: true },
+      { value: hrAvg, name: '平均心率', min: 40, max: 220, required: false },
+    ];
 
-    const hrMinVal = parseFloat(this.data.hrMin);
-    const hrMaxVal = parseFloat(this.data.hrMax);
-
-    const hrAvgInput = this.data.hrAvg;
-    const hrAvgVal = hrAvgInput === '' ? NaN : parseFloat(hrAvgInput);
-
-    if (!Number.isFinite(hrMinVal) || !Number.isFinite(hrMaxVal) || hrMinVal <= 0 || hrMaxVal <= 0) {
-      wx.showToast({ title: '请输入有效的心率范围', icon: 'none' });
-      return;
+    for (const field of validations) {
+      if (field.required && !field.value) {
+        wx.showToast({ title: `请输入${field.name}`, icon: 'none' });
+        return;
+      }
+      if (field.value) { // 仅在有值时检查格式和范围
+        const numValue = parseFloat(field.value);
+        if (!Number.isFinite(numValue)) {
+          wx.showToast({ title: `${field.name}输入无效`, icon: 'none' });
+          return;
+        }
+        if (numValue < field.min || numValue > field.max) {
+          wx.showToast({ title: `${field.name}应在 ${field.min} 到 ${field.max} 之间`, icon: 'none' });
+          return;
+        }
+      }
     }
+
+    const sex = (sexOptions[sexIndex] || sexOptions[0]).value;
+    const ageValue = parseFloat(age);
+    const hrMinVal = parseFloat(hrMin);
+    const hrMaxVal = parseFloat(hrMax);
+    const hrAvgVal = hrAvg === '' ? NaN : parseFloat(hrAvg);
 
     const HRlo = Math.min(hrMinVal, hrMaxVal);
     const HRhi = Math.max(hrMinVal, hrMaxVal);
 
-    const lo = computeOne(sex, age, HRlo);
-    const hi = computeOne(sex, age, HRhi);
-    const avg = Number.isFinite(hrAvgVal) ? computeOne(sex, age, hrAvgVal) : null;
+    const lo = computeOne(sex, ageValue, HRlo);
+    const hi = computeOne(sex, ageValue, HRhi);
+    const avg = Number.isFinite(hrAvgVal) ? computeOne(sex, ageValue, hrAvgVal) : null;
 
     // 重叠区间（IVCT/IVRT）
     const ivctOverlapEnd = Math.min(lo.r_to_ivct_end, hi.r_to_ivct_end);
