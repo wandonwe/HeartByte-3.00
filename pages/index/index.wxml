@@ -32,16 +32,11 @@
   <view class="card input-card">
     <view class="input-header">
       <view class="input-title-stack">
-        <text class="input-pill">步骤 1</text>
         <text class="section-title input-title-text">患者输入</text>
-      </view>
-      <view class="input-badge">
-        <view class="badge-dot"></view>
-        <text class="badge-text">IVCT · LVET · IVRT</text>
       </view>
     </view>
 
-    <text class="section-desc input-desc">填写下方字段并点击预测按钮以生成机械时相窗口。时间轴区域将自适应画布并可横向滚动查看完整范围。</text>
+    <text class="section-desc input-desc">填写下方字段并点击预测按钮以生成机械时相窗口。</text>
 
     <view class="input-grid">
       <!-- 性别 -->
@@ -115,19 +110,37 @@
 
   <!-- 结果区 -->
   <block wx:if="{{results}}">
-    <!-- 重叠卡片 -->
-    <view class="card overlap-card">
-      <view class="card-header">
-        <text class="section-title">重叠窗口</text>
-        <view class="soft-pill" style="color: #f97316; background: rgba(249,115,22,0.18);">IVCT · IVRT</view>
-      </view>
-      <view class="kv-list">
-        <view class="kv-row" wx:for="{{results.overlapSection.items}}" wx:key="label">
-          <text class="kv-label">{{item.label}}</text>
-          <text class="kv-value">{{item.value}}</text>
+    <!-- 重叠 + 时间轴 融合卡片 -->
+    <view class="card timeline-card">
+      <view class="timeline-heading">
+        <view class="timeline-title">
+          <text class="section-title">机械相位预测结果</text>
+          <text class="timeline-subtitle">IVCT · LVET · IVRT 随心率绘制，并展示关键机械相位重叠区间。</text>
+        </view>
+        <view class="timeline-overlap-summary" wx:if="{{results.overlapSummary}}">
+          <view class="overlap-chip overlap-{{item.tone}}" wx:for="{{results.overlapSummary}}" wx:key="label">
+            <text class="overlap-chip-label">{{item.label}}</text>
+            <text class="overlap-chip-value">{{item.value}}</text>
+          </view>
         </view>
       </view>
-      <text class="section-desc">{{results.overlapSection.description}}</text>
+
+      <scroll-view scroll-x="true" class="timeline-scroll" enable-flex="true">
+        <view class="timeline-chart">
+          <canvas
+            class="timeline-canvas"
+            id="timelineCanvas"
+            canvas-id="timelineCanvas"
+            style="width: {{canvasDisplayWidth}}px; height: {{canvasHeight}}px;"
+            width="{{canvasPixelWidth}}"
+            height="{{canvasPixelHeight}}"
+          ></canvas>
+        </view>
+      </scroll-view>
+
+      <text class="overlap-description">{{results.overlapSection.description}}</text>
+      <text class="timeline-note">提示：结果仅作研究/教学参考，临床决策需结合实测。</text>
+      <button class="timeline-export-btn" bindtap="handleExport">导出图表</button>
     </view>
 
     <!-- HR 卡片 -->
@@ -145,39 +158,6 @@
         </view>
       </view>
     </block>
-
-    <!-- 时间轴卡片（可横向滚动，避免裁切） -->
-    <view class="card timeline-card">
-      <view class="timeline-top">
-        <view class="timeline-title">
-          <text class="section-title">R 波对齐时间轴</text>
-          <text class="timeline-subtitle">IVCT · LVET · IVRT 随心率绘制；可横向滚动查看完整范围。</text>
-        </view>
-        <button class="chip-btn" bindtap="handleExport">导出图表</button>
-      </view>
-
-      <view class="timeline-rates" wx:if="{{results.timelineMeta && results.timelineMeta.length}}">
-        <view class="rate-card tone-{{item.tone}}" wx:for="{{results.timelineMeta}}" wx:key="key">
-          <text class="rate-label">{{item.label}}</text>
-          <text class="rate-value">{{item.value}}</text>
-        </view>
-      </view>
-
-      <scroll-view scroll-x="true" class="timeline-scroll" enable-flex="true">
-        <view class="timeline-chart">
-          <canvas
-            class="timeline-canvas"
-            id="timelineCanvas"
-            canvas-id="timelineCanvas"
-            style="width: {{canvasDisplayWidth}}px; height: {{canvasHeight}}px;"
-            width="{{canvasPixelWidth}}"
-            height="{{canvasPixelHeight}}"
-          ></canvas>
-        </view>
-      </scroll-view>
-
-      <text class="timeline-note">提示：结果仅作研究/教学参考，临床决策需结合实测。</text>
-    </view>
 
     <!-- 术语说明（可折叠） -->
     <view class="card glossary-card">

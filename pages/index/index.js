@@ -146,6 +146,11 @@ function formatIntervalDetails(interval) {
   if (!interval) return '无重叠';
   return `${fmt(interval.start)} -> ${fmt(interval.end)}（持续 ${fmt(interval.length)}）`;
 }
+
+function formatOverlapChip(interval) {
+  if (!interval) return '无重叠';
+  return `${fmt(interval.start)} - ${fmt(interval.end)} ms（${fmt(interval.length)} ms）`;
+}
 function buildHrItems(data) {
   return [
     { label: 'IVCT 持续时间', value: formatMs(data.ivct_raw) },
@@ -283,19 +288,27 @@ Page({
       });
     }
 
+    const overlapItems = [
+      { label: 'IVCT 重叠', value: formatIntervalDetails(ivctOverlap) },
+      { label: 'IVRT 重叠', value: formatIntervalDetails(ivrtOverlap) },
+    ];
+
+    const overlapSummary = [
+      { label: 'IVCT 重叠', value: formatOverlapChip(ivctOverlap), tone: 'ivct' },
+      { label: 'IVRT 重叠', value: formatOverlapChip(ivrtOverlap), tone: 'ivrt' },
+    ];
+
     const overlapSection = {
       title: '重叠窗口',
       pill: { label: 'IVCT 与 IVRT', color: COLOR_TOKENS.overlap.primary, bgColor: COLOR_TOKENS.overlap.soft },
-      items: [
-        { label: 'IVCT 重叠', value: formatIntervalDetails(ivctOverlap) },
-        { label: 'IVRT 重叠', value: formatIntervalDetails(ivrtOverlap) },
-      ],
+      items: overlapItems,
       description: '比较 HRmin 与 HRmax 下收缩期与舒张期的重叠情况。',
     };
 
     const results = {
       hrSections,
       overlapSection,
+      overlapSummary,
       timelineMeta: [
         { key: 'min', label: 'HRmin', value: `${fmt(lo.HR)} bpm`, tone: 'min' },
         { key: 'max', label: 'HRmax', value: `${fmt(hi.HR)} bpm`, tone: 'max' },
@@ -312,7 +325,14 @@ Page({
     const overlapRow = ivctOverlap || ivrtOverlap ? 1 : 0;
     const hrRowCount = avg ? 3 : 2;
     const totalRows = overlapRow + hrRowCount;
-    const canvasHeight = Math.max(240, THEME.spacing.base + totalRows * THEME.spacing.row);
+    const computedHeight = THEME.spacing.base + totalRows * THEME.spacing.row;
+    const hasOverlap = Boolean(overlapRow);
+    const minHeight = hasOverlap ? 280 : 260;
+    const maxHeight = hasOverlap ? 360 : 320;
+    const clampedHeight = Math.min(Math.max(computedHeight, minHeight), maxHeight);
+    const canvasHeight = Math.round(clampedHeight);
+    const pixelRatio = this.data.pixelRatio || 1;
+    const canvasPixelHeight = Math.round(canvasHeight * pixelRatio);
 
     this.setData(
       {
@@ -320,7 +340,7 @@ Page({
         timelineData,
         showViz: true,
         canvasHeight,
-        canvasPixelHeight: Math.round(canvasHeight),
+        canvasPixelHeight,
       },
       () => {
         this.drawTimeline();
