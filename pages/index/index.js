@@ -94,44 +94,43 @@ const GLOSSARY = [
   { term: 'IVRT', description: '等容舒张期：主动脉瓣关闭到二尖瓣开启的时间。' },
 ];
 
-// 算法模型：回归系数配置
-// 基于 Schmidt et al. (Clin Res Cardiol, 2023)
+/**
+ * CCHS-2025：按年龄段 β（不插值）
+ * 直接按年龄段选择 β 与 μ_corr，计算 raw = μ_corr − β·HR
+ */
 const REGRESSION_MODEL = {
-  female: {
-    IVRT_corr_base: 113,
-    IVRT_beta: 0.30,
-    IVRT_age_coeff: 0.35,
-    IVCT_corr_base: 52,
-    IVCT_beta: 0.15,
-    IVCT_age_coeff: 0.10,
-    LVET_corr_base: 393,
-    LVET_beta: 1.4,
-  },
-  male: {
-    IVRT_corr_base: 111,
-    IVRT_beta: 0.19,
-    IVRT_age_coeff: 0.35,
-    IVCT_corr_base: 48,
-    IVCT_beta: 0.15,
-    IVCT_age_coeff: 0.00,
-    LVET_corr_base: 388,
-    LVET_beta: 1.4,
-  },
+  female: [
+    { range: [20, 34], beta: { IVCT: 0.23, LVET: 1.43, IVRT: 0.37 }, corr: { IVCT: 53, LVET: 384, IVRT: 105 } },
+    { range: [35, 49], beta: { IVCT: 0.22, LVET: 1.37, IVRT: 0.41 }, corr: { IVCT: 54, LVET: 384, IVRT: 115 } },
+    { range: [50, 64], beta: { IVCT: 0.22, LVET: 1.56, IVRT: 0.26 }, corr: { IVCT: 56, LVET: 399, IVRT: 120 } },
+    { range: [65, 100], beta:{ IVCT: 0.11, LVET: 1.83, IVRT: 0.53 }, corr: { IVCT: 49, LVET: 415, IVRT: 149 } },
+  ],
+  male: [
+    { range: [20, 34], beta: { IVCT: 0.05, LVET: 1.17, IVRT: 0.28 }, corr: { IVCT: 41, LVET: 356, IVRT: 102 } },
+    { range: [35, 49], beta: { IVCT: 0.30, LVET: 1.25, IVRT: 0.56 }, corr: { IVCT: 56, LVET: 363, IVRT: 131 } },
+    { range: [50, 64], beta: { IVCT: 0.19, LVET: 1.67, IVRT: 0.24 }, corr: { IVCT: 51, LVET: 391, IVRT: 124 } },
+    { range: [65, 100], beta:{ IVCT: 0.01, LVET: 1.73, IVRT: 0.84 }, corr: { IVCT: 39, LVET: 401, IVRT: 172 } },
+  ],
 };
+
 
 // 计算：单一心率下的时间点
 function computeOne(sex, age, HR) {
-  // 从配置中获取对应性别的系数
-  const coeffs = REGRESSION_MODEL[sex];
+  // CCHS-2025：按年龄段选择 β 与 μ_corr（不插值）
+  const groups = REGRESSION_MODEL[sex];
+  const a = Math.max(20, Math.min(age, 100));
+  let g = groups[0];
+  for (let i = 0; i < groups.length; i++) {
+    const [lo, hi] = groups[i].range;
+    if (a >= lo && a <= hi) { g = groups[i]; break; }
+  }
+  const { beta, corr } = g;
 
-  // 使用系数进行计算
-  const ivrt_corr = coeffs.IVRT_corr_base + coeffs.IVRT_age_coeff * (age - 40);
-  const ivct_corr = coeffs.IVCT_corr_base + coeffs.IVCT_age_coeff * (age - 40);
+  const ivct_raw = corr.IVCT - beta.IVCT * HR;
+  const lvet_raw = corr.LVET - beta.LVET * HR;
+  const ivrt_raw = corr.IVRT - beta.IVRT * HR;
 
-  const ivrt_raw = ivrt_corr - coeffs.IVRT_beta * HR;
-  const ivct_raw = ivct_corr - coeffs.IVCT_beta * HR;
-  const lvet_raw = coeffs.LVET_corr_base - coeffs.LVET_beta * HR;
-
+  // 相对 R 波的累积分界点（单位 ms）
   const r_to_ivct_end = ivct_raw;
   const r_to_lvet_end = ivct_raw + lvet_raw;
   const r_to_ivrt_start = r_to_lvet_end;
@@ -199,7 +198,7 @@ Page({
     pixelRatio: 1,
     glossary: GLOSSARY,
     heroIcon: HEART_ICON_SVG,
-    heroSubtitle: 'Regression equations from Schmidt et al. (Clin Res Cardiol, 2023).',
+    heroSubtitle: 'Equations from CCHS (Alhakak et al., Clin Res Cardiol, 2025).',
     glossaryOpen: false,
     pulseScale: 1,
     _pulseTimer: null,
@@ -232,7 +231,7 @@ Page({
 
     // --- 增强的输入验证 ---
     const validations = [
-      { value: age, name: '年龄', min: 18, max: 100, required: true },
+      { value: age, name: '年龄', min: 20, max: 100, required: true },
       { value: hrMin, name: '最小心率', min: 40, max: 220, required: true },
       { value: hrMax, name: '最大心率', min: 40, max: 220, required: true },
       { value: hrAvg, name: '平均心率', min: 40, max: 220, required: false },
