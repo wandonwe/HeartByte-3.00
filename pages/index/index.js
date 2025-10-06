@@ -46,19 +46,31 @@ const HEART_ICON_SVG =
 
 // 统一色板
 const COLOR_TOKENS = {
-  ivct: { primary: '#2563eb', dark: '#1d4ed8', soft: 'rgba(37, 99, 235, 0.12)' },
-  lvet: { primary: '#0f766e', dark: '#047857', soft: 'rgba(15, 118, 110, 0.12)' },
-  ivrt: { primary: '#7c3aed', dark: '#6d28d9', soft: 'rgba(124, 58, 237, 0.12)' },
+  ivct: {
+    min: { primary: '#60a5fa', dark: '#2563eb', shadow: '#1d4ed8' }, // 最亮
+    avg: { primary: '#3b82f6', dark: '#1d4ed8', shadow: '#1e40af' }, // 中等
+    max: { primary: '#2563eb', dark: '#1e40af', shadow: '#1e3a8a' }, // 最深
+    soft: 'rgba(37, 99, 235, 0.12)',
+  },
+  lvet: {
+    min: { primary: '#2dd4bf', dark: '#0f766e', shadow: '#047857' },
+    avg: { primary: '#14b8a6', dark: '#047857', shadow: '#065f46' },
+    max: { primary: '#0f766e', dark: '#065f46', shadow: '#064e3b' },
+    soft: 'rgba(15, 118, 110, 0.12)',
+  },
+  ivrt: {
+    min: { primary: '#a78bfa', dark: '#7c3aed', shadow: '#6d28d9' },
+    avg: { primary: '#8b5cf6', dark: '#6d28d9', shadow: '#5b21b6' },
+    max: { primary: '#7c3aed', dark: '#5b21b6', shadow: '#4c1d95' },
+    soft: 'rgba(124, 58, 237, 0.12)',
+  },
   overlap: { primary: '#f97316', soft: 'rgba(249, 115, 22, 0.1)' },
-  minCard: { primary: '#3b82f6', soft: 'rgba(59, 130, 246, 0.15)' }, // 明亮的蓝色
-  avgCard: { primary: '#8b5cf6', soft: 'rgba(139, 92, 246, 0.15)' }, // 中间调的蓝紫色
-  maxCard: { primary: '#c026d3', soft: 'rgba(192, 38, 211, 0.15)' }, // 深洋红色
 };
 
 // 主题（字号/间距/网格/调色）
 const THEME = {
   font: { title: 15, label: 13, axisLabel: 12, segment: 12, annotation: 11 },
-  spacing: { leftPad: 110, rightPad: 36, topPad: 72, row: 68, barHeight: 22, base: 150 },
+  spacing: { leftPad: 110, rightPad: 36, topPad: 72, row: 68, barHeight: 22, base: 140 },
   grid: { major: 100, minor: 50 },
   palette: {
     text: '#0f172a',
@@ -266,7 +278,7 @@ Page({
 
     const ivctOverlapSection = {
       title: '等容收缩期重叠窗口',
-      pill: { label: 'IVCT · 等容收缩期', color: COLOR_TOKENS.ivct.primary, bgColor: COLOR_TOKENS.ivct.soft },
+      pill: { label: 'IVCT · 等容收缩期', color: COLOR_TOKENS.ivct.max.primary, bgColor: COLOR_TOKENS.ivct.soft },
       items: [
         { label: '重叠区间', value: formatIntervalDetails(ivctOverlap) },
       ],
@@ -274,7 +286,7 @@ Page({
 
     const ivrtOverlapSection = {
       title: '等容舒张期重叠窗口',
-      pill: { label: 'IVRT · 等容舒张期', color: COLOR_TOKENS.ivrt.primary, bgColor: COLOR_TOKENS.ivrt.soft },
+      pill: { label: 'IVRT · 等容舒张期', color: COLOR_TOKENS.ivrt.max.primary, bgColor: COLOR_TOKENS.ivrt.soft },
       items: [
         { label: '重叠区间', value: formatIntervalDetails(ivrtOverlap) },
       ],
@@ -532,37 +544,33 @@ Page({
     }
 
     // 绘制一个圆角条段（支持自定义高度）
-    function drawRoundedBar(x1, x2, y, color, darkColor, heightPx = barHeight, isGhost = false) {
+    function drawRoundedBar(x1, x2, y, colors, heightPx = barHeight, isGhost = false) {
       const widthPx = Math.max(0, x2 - x1);
       if (widthPx <= 0 || heightPx <= 0) return null;
 
       const radius = Math.min(10, widthPx / 2, heightPx / 2);
-      if (!isGhost && darkColor) {
+      if (!isGhost && colors.dark) {
+        // 绘制底部阴影层以增强3D感
+        const shadowOffset = 2 / pixelRatio;
+        ctx.fillStyle = colors.shadow;
+        fillRoundedRect(ctx, x1, y + shadowOffset, widthPx, heightPx, radius);
+
+        // 绘制顶部渐变层
         const gradient = ctx.createLinearGradient(x1, y, x1, y + heightPx);
-        gradient.addColorStop(0, color);
-        gradient.addColorStop(1, darkColor);
+        gradient.addColorStop(0, colors.primary);
+        gradient.addColorStop(1, colors.dark);
         ctx.fillStyle = gradient;
+        fillRoundedRect(ctx, x1, y, widthPx, heightPx, radius);
       } else {
-        ctx.fillStyle = color;
+        ctx.fillStyle = colors.primary; // For ghost bars
+        fillRoundedRect(ctx, x1, y, widthPx, heightPx, radius);
       }
-      ctx.beginPath();
-      ctx.moveTo(x1 + radius, y);
-      ctx.lineTo(x2 - radius, y);
-      ctx.quadraticCurveTo(x2, y, x2, y + radius);
-      ctx.lineTo(x2, y + heightPx - radius);
-      ctx.quadraticCurveTo(x2, y + heightPx, x2 - radius, y + heightPx);
-      ctx.lineTo(x1 + radius, y + heightPx);
-      ctx.quadraticCurveTo(x1, y + heightPx, x1, y + heightPx - radius);
-      ctx.lineTo(x1, y + radius);
-      ctx.quadraticCurveTo(x1, y, x1 + radius, y);
-      ctx.closePath();
-      ctx.fill();
 
       return { x1, x2, y1: y, y2: y + heightPx };
     }
 
     // 行：相段（IVCT / LVET / IVRT）
-    function drawPhaseRow(label, data, compareData, rowIndex) {
+    function drawPhaseRow(label, data, compareData, rowIndex, rowKey) {
       const baseY = axisY + headerOffset + rowIndex * rowSpacing;
 
       setBodyText(ctx, pixelRatio);
@@ -575,35 +583,24 @@ Page({
         const ghostY = baseY - ghostHeight / 2;
         drawRoundedBar(
           scale(0), scale(compareData.r_to_ivct_end),
-          ghostY, COLOR_TOKENS.ivct.soft, null, ghostHeight, true
+          ghostY, { primary: COLOR_TOKENS.ivct.soft }, ghostHeight, true
         );
         drawRoundedBar(
           scale(compareData.r_to_ivct_end), scale(compareData.r_to_lvet_end),
-          ghostY, COLOR_TOKENS.lvet.soft, null, ghostHeight, true
+          ghostY, { primary: COLOR_TOKENS.lvet.soft }, ghostHeight, true
         );
         drawRoundedBar(
           scale(compareData.r_to_ivrt_start), scale(compareData.r_to_ivrt_end),
-          ghostY, COLOR_TOKENS.ivrt.soft, null, ghostHeight, true
+          ghostY, { primary: COLOR_TOKENS.ivrt.soft }, ghostHeight, true
         );
       }
 
       // 绘制主要的三相条段 (覆盖在幽灵条之上)
       const barY = baseY - barHeight / 2;
-      const ivctSpan = drawRoundedBar(scale(0), scale(data.r_to_ivct_end), barY, COLOR_TOKENS.ivct.primary, COLOR_TOKENS.ivct.dark);
-      const lvetSpan = drawRoundedBar(
-        scale(data.r_to_ivct_end),
-        scale(data.r_to_lvet_end),
-        barY,
-        COLOR_TOKENS.lvet.primary,
-        COLOR_TOKENS.lvet.dark
-      );
-      const ivrtSpan = drawRoundedBar(
-        scale(data.r_to_ivrt_start),
-        scale(data.r_to_ivrt_end),
-        barY,
-        COLOR_TOKENS.ivrt.primary,
-        COLOR_TOKENS.ivrt.dark
-      );
+      const colorSet = COLOR_TOKENS.ivct[rowKey] || COLOR_TOKENS.ivct.avg;
+      const ivctSpan = drawRoundedBar(scale(0), scale(data.r_to_ivct_end), barY, colorSet);
+      const lvetSpan = drawRoundedBar(scale(data.r_to_ivct_end), scale(data.r_to_lvet_end), barY, COLOR_TOKENS.lvet[rowKey] || COLOR_TOKENS.lvet.avg);
+      const ivrtSpan = drawRoundedBar(scale(data.r_to_ivrt_start), scale(data.r_to_ivrt_end), barY, COLOR_TOKENS.ivrt[rowKey] || COLOR_TOKENS.ivrt.avg);
 
       // 段标签
       ctx.textAlign = 'center';
@@ -628,10 +625,10 @@ Page({
         const midX = (x1 + x2) / 2;
 
         // 使用更深的颜色以获得更好的对比度
-        const darkColor = (label.includes('IVCT') ? COLOR_TOKENS.ivct.dark : COLOR_TOKENS.ivrt.dark);
+        const darkColor = (label.includes('IVCT') ? COLOR_TOKENS.ivct.max.primary : COLOR_TOKENS.ivrt.max.primary);
 
         ctx.strokeStyle = darkColor;
-        ctx.lineWidth = 1.5 / pixelRatio;
+        ctx.lineWidth = 1 / pixelRatio;
         // Bracket lines
         ctx.beginPath();
         ctx.moveTo(x1, annotationY + 8);
@@ -651,28 +648,18 @@ Page({
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillText(
-          `${label}: ${fmt(overlap.start)} → ${fmt(overlap.end)} ms (${fmt(overlap.length)} ms)`,
+          `${label}: ${fmt(overlap.start)} ms → ${fmt(overlap.end)} ms (${fmt(overlap.length)} ms)`,
           midX,
           annotationY + 14
         );
       };
 
-      drawAnnotation(ivctOverlap, COLOR_TOKENS.ivct.dark, 'IVCT 重叠');
-      drawAnnotation(ivrtOverlap, COLOR_TOKENS.ivrt.dark, 'IVRT 重叠');
+      drawAnnotation(ivctOverlap, COLOR_TOKENS.ivct.max.primary, 'IVCT 重叠');
+      drawAnnotation(ivrtOverlap, COLOR_TOKENS.ivrt.max.primary, 'IVRT 重叠');
       ctx.textAlign = 'left'; // Reset
     }
 
-    // 构造行并绘制
-    const rows = [];
-    rows.push({ type: 'hr', label: `HRmin (${fmt(lo.HR)} bpm)`, payload: lo, compare: hi });
-    if (avg) rows.push({ type: 'hr', label: `HRavg (${fmt(avg.HR)} bpm)`, payload: avg, compare: hi });
-    rows.push({ type: 'hr', label: `HRmax (${fmt(hi.HR)} bpm)`, payload: hi, compare: lo });
-
-    rows.forEach((row, index) => {
-      drawPhaseRow(row.label, row.payload, row.compare, index);
-    });
-
-    // R 垂直虚线 + 标记
+    // R 垂直虚线 + 标记 (先绘制，作为背景)
     const rX = scale(0);
     ctx.strokeStyle = THEME.palette.r;
     ctx.lineDash = [6 / pixelRatio, 4 / pixelRatio];
@@ -684,7 +671,17 @@ Page({
 
     ctx.fillStyle = THEME.palette.r;
     ctx.font = `${THEME.font.axisLabel}px sans-serif`;
-    ctx.fillText('R', rX - 10, axisY - 12);
+    ctx.fillText('R', rX - 15, axisY - 12);
+
+    // 构造行并绘制
+    const rows = [];
+    rows.push({ type: 'hr', key: 'min', label: `HRmin (${fmt(lo.HR)} bpm)`, payload: lo, compare: hi });
+    if (avg) rows.push({ type: 'hr', key: 'avg', label: `HRavg (${fmt(avg.HR)} bpm)`, payload: avg, compare: hi });
+    rows.push({ type: 'hr', key: 'max', label: `HRmax (${fmt(hi.HR)} bpm)`, payload: hi, compare: lo });
+
+    rows.forEach((row, index) => {
+      drawPhaseRow(row.label, row.payload, row.compare, index, row.key);
+    });
 
     // 在每个泳道上标记 R 点
     rows.forEach((_, index) => {
