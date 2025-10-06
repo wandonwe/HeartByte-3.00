@@ -144,21 +144,21 @@ function formatMs(value) {
 }
 function formatIntervalDetails(interval) {
   if (!interval) return '无重叠';
-  return `${fmt(interval.start)} -> ${fmt(interval.end)}（持续 ${fmt(interval.length)}）`;
+  return `${fmt(interval.start)} → ${fmt(interval.end)}（持续 ${fmt(interval.length)}）`;
 }
 
 function formatOverlapChip(interval) {
   if (!interval) return '无重叠';
-  return `${fmt(interval.start)} - ${fmt(interval.end)} ms（${fmt(interval.length)} ms）`;
+  return `${fmt(interval.start)} → ${fmt(interval.end)} ms（${fmt(interval.length)} ms）`;
 }
 function buildHrItems(data) {
   return [
     { label: 'IVCT 持续时间', value: formatMs(data.ivct_raw) },
     { label: 'IVRT 持续时间', value: formatMs(data.ivrt_raw) },
-    { label: 'R -> IVCT 终点', value: formatMs(data.r_to_ivct_end) },
-    { label: 'R -> LVET 终点', value: formatMs(data.r_to_lvet_end) },
-    { label: 'R -> IVRT 起点', value: formatMs(data.r_to_ivrt_start) },
-    { label: 'R -> IVRT 终点', value: formatMs(data.r_to_ivrt_end) },
+    { label: 'R → IVCT 终点', value: formatMs(data.r_to_ivct_end) },
+    { label: 'R → LVET 终点', value: formatMs(data.r_to_lvet_end) },
+    { label: 'R → IVRT 起点', value: formatMs(data.r_to_ivrt_start) },
+    { label: 'R → IVRT 终点', value: formatMs(data.r_to_ivrt_end) },
   ];
 }
 
@@ -524,27 +524,27 @@ Page({
       ctxInstance.fill();
     }
 
-    // 绘制一个圆角条段
-    function drawRoundedBar(x1, x2, y, color) {
+    // 绘制一个圆角条段（支持自定义高度）
+    function drawRoundedBar(x1, x2, y, color, heightPx = barHeight) {
       const widthPx = Math.max(0, x2 - x1);
-      if (widthPx <= 0) return null;
+      if (widthPx <= 0 || heightPx <= 0) return null;
 
-      const radius = Math.min(10 * pixelRatio, widthPx / 2);
+      const radius = Math.min(10 * pixelRatio, widthPx / 2, heightPx / 2);
       ctx.setFillStyle(color);
       ctx.beginPath();
       ctx.moveTo(x1 + radius, y);
       ctx.lineTo(x2 - radius, y);
       ctx.quadraticCurveTo(x2, y, x2, y + radius);
-      ctx.lineTo(x2, y + barHeight - radius);
-      ctx.quadraticCurveTo(x2, y + barHeight, x2 - radius, y + barHeight);
-      ctx.lineTo(x1 + radius, y + barHeight);
-      ctx.quadraticCurveTo(x1, y + barHeight, x1, y + barHeight - radius);
+      ctx.lineTo(x2, y + heightPx - radius);
+      ctx.quadraticCurveTo(x2, y + heightPx, x2 - radius, y + heightPx);
+      ctx.lineTo(x1 + radius, y + heightPx);
+      ctx.quadraticCurveTo(x1, y + heightPx, x1, y + heightPx - radius);
       ctx.lineTo(x1, y + radius);
       ctx.quadraticCurveTo(x1, y, x1 + radius, y);
       ctx.closePath();
       ctx.fill();
 
-      return { x1, x2 };
+      return { x1, x2, y1: y, y2: y + heightPx };
     }
 
     // 行：相段（IVCT / LVET / IVRT）
@@ -608,8 +608,8 @@ Page({
       const headerOffset = 28 * pixelRatio;
       const gutter = 16 * pixelRatio;
       const corner = 14 * pixelRatio;
-      const extraHeight = ivrtOverlap ? barHeight + 12 * pixelRatio : 0;
 
+      // Single compact block height; we will draw two thin bars inside the same row
       const baseY = axisY + headerOffset + rowIndex * rowSpacing;
       const backgroundY = baseY - gutter;
 
@@ -619,29 +619,40 @@ Page({
         Math.max(0, leftPad - gutter),
         backgroundY,
         Math.max(0, WIDTH - leftPad - rightPad + gutter * 2),
-        barHeight + 32 * pixelRatio + extraHeight,
+        barHeight + 32 * pixelRatio,
         corner
       );
 
+      // Title on the left
       setBodyText(ctx, pixelRatio);
       ctx.fillText('重叠窗口', 24 * pixelRatio, baseY + barHeight - 4 * pixelRatio);
 
+      // Two thin bars drawn within the same row
+      const thin = Math.max(10 * pixelRatio, Math.round(barHeight * 0.55));
+      const gap = 6 * pixelRatio;
+      // Center the two thin bars vertically within available bar slot
+      const totalThin = thin * 2 + gap;
+      const yStart = baseY + Math.max(0, (barHeight - totalThin) / 2);
+
       ctx.setTextAlign('center');
       ctx.setFontSize(THEME.font.segment * pixelRatio);
-      ctx.setFillStyle('#78350f');
 
-      let currentY = baseY;
+      // IVCT overlap — use IVCT theme color
       if (ivctOverlap) {
-        const span = drawRoundedBar(scale(ivctOverlap.start), scale(ivctOverlap.end), currentY, COLOR_TOKENS.overlap.primary);
-        if (span) {
-          ctx.fillText('IVCT overlap', (span.x1 + span.x2) / 2, currentY + barHeight - 4 * pixelRatio);
-          currentY += barHeight + 12 * pixelRatio;
+        const s1 = drawRoundedBar(scale(ivctOverlap.start), scale(ivctOverlap.end), yStart, COLOR_TOKENS.ivct.primary, thin);
+        if (s1) {
+          ctx.setFillStyle('#ffffff');
+          ctx.fillText('IVCT overlap', (s1.x1 + s1.x2) / 2, yStart + thin - 4 * pixelRatio);
         }
       }
+
+      // IVRT overlap — use IVRT theme color
       if (ivrtOverlap) {
-        const span = drawRoundedBar(scale(ivrtOverlap.start), scale(ivrtOverlap.end), currentY, 'rgba(249, 115, 22, 0.65)');
-        if (span) {
-          ctx.fillText('IVRT overlap', (span.x1 + span.x2) / 2, currentY + barHeight - 4 * pixelRatio);
+        const y2 = yStart + thin + gap;
+        const s2 = drawRoundedBar(scale(ivrtOverlap.start), scale(ivrtOverlap.end), y2, COLOR_TOKENS.ivrt.primary, thin);
+        if (s2) {
+          ctx.setFillStyle('#ffffff');
+          ctx.fillText('IVRT overlap', (s2.x1 + s2.x2) / 2, y2 + thin - 4 * pixelRatio);
         }
       }
 

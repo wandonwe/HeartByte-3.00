@@ -124,7 +124,6 @@
           </view>
         </view>
       </view>
-
       <scroll-view scroll-x="true" class="timeline-scroll" enable-flex="true">
         <view class="timeline-chart">
           <canvas
