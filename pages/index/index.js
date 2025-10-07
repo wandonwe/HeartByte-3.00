@@ -39,25 +39,25 @@ const HEART_ICON_SVG =
 
 // 统一色板
 const COLOR_TOKENS = {
-  ivct: {
-    min: { primary: '#60a5fa', dark: '#2563eb', shadow: '#1d4ed8' }, // 最亮
-    avg: { primary: '#3b82f6', dark: '#1d4ed8', shadow: '#1e40af' }, // 中等
-    max: { primary: '#2563eb', dark: '#1e40af', shadow: '#1e3a8a' }, // 最深
-    soft: 'rgba(37, 99, 235, 0.12)',
+  ivct: { // 天蓝色系
+    min: { primary: '#87CEFA', dark: '#00BFFF', shadow: 'rgba(0, 191, 255, 0.5)' },
+    avg: { primary: '#00BFFF', dark: '#1E90FF', shadow: 'rgba(30, 144, 255, 0.5)' },
+    max: { primary: '#1E90FF', dark: '#4682B4', shadow: 'rgba(70, 130, 180, 0.5)' },
+    soft: 'rgba(135, 206, 250, 0.15)',
   },
-  lvet: {
-    min: { primary: '#2dd4bf', dark: '#0f766e', shadow: '#047857' },
-    avg: { primary: '#14b8a6', dark: '#047857', shadow: '#065f46' },
-    max: { primary: '#0f766e', dark: '#065f46', shadow: '#064e3b' },
-    soft: 'rgba(15, 118, 110, 0.12)',
+  lvet: { // Green
+    min: { primary: '#88d498', dark: '#5dbb6d', shadow: 'rgba(70, 150, 90, 0.5)' },
+    avg: { primary: '#5dbb6d', dark: '#3a9d49', shadow: 'rgba(45, 125, 60, 0.5)' },
+    max: { primary: '#3a9d49', dark: '#237832', shadow: 'rgba(25, 90, 40, 0.5)' },
+    soft: 'rgba(93, 187, 109, 0.15)',
   },
-  ivrt: {
-    min: { primary: '#a78bfa', dark: '#7c3aed', shadow: '#6d28d9' },
-    avg: { primary: '#8b5cf6', dark: '#6d28d9', shadow: '#5b21b6' },
-    max: { primary: '#7c3aed', dark: '#5b21b6', shadow: '#4c1d95' },
-    soft: 'rgba(124, 58, 237, 0.12)',
+  ivrt: { // Purple
+    min: { primary: '#b1a2f5', dark: '#8b7ce0', shadow: 'rgba(110, 95, 190, 0.5)' },
+    avg: { primary: '#8b7ce0', dark: '#6456c3', shadow: 'rgba(80, 70, 160, 0.5)' },
+    max: { primary: '#6456c3', dark: '#453a9b', shadow: 'rgba(50, 40, 120, 0.5)' },
+    soft: 'rgba(139, 124, 224, 0.15)',
   },
-  overlap: { primary: '#f97316', soft: 'rgba(249, 115, 22, 0.1)' },
+  overlap: { primary: '#f97316', soft: 'rgba(249, 115, 22, 0.1)' }, // Keep for high visibility
 };
 
 // 主题（字号/间距/网格/调色）
@@ -365,7 +365,7 @@ Page({
         if (!this.canvasNode) {
           await this._initCanvas();
         }
-        this.drawTimeline(); // Now draw
+        this.animateTimeline(); // Use the new animation function
         this._startPulse(); // Restart pulse with new HR values
       }
     );
@@ -455,8 +455,35 @@ Page({
     });
   },
 
+  // NEW: Animate the timeline drawing
+  animateTimeline() {
+    if (this._animationFrameId) {
+      this.canvasNode.cancelAnimationFrame(this._animationFrameId);
+    }
+
+    const duration = 450; // ms
+    const startTime = Date.now();
+
+    const animate = () => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      let progress = Math.min(elapsed / duration, 1);
+
+      // Ease-out cubic function for a smoother effect
+      progress = 1 - Math.pow(1 - progress, 3);
+
+      this.drawTimeline(progress);
+
+      if (progress < 1) {
+        this._animationFrameId = this.canvasNode.requestAnimationFrame(animate);
+      }
+    };
+
+    animate();
+  },
+
   // 绘图：时间轴
-  drawTimeline() {
+  drawTimeline(animationProgress = 1) {
     const timelineData = this.data.timelineData;
     if (!timelineData || !this.canvasCtx || !this.canvasNode) return;
 
@@ -571,33 +598,50 @@ Page({
     }
 
     // 绘制一个圆角条段（支持自定义高度）
-    function drawRoundedBar(x1, x2, y, colors, heightPx = barHeight, isGhost = false) {
-      const widthPx = Math.max(0, x2 - x1);
+    function drawRoundedBar(x1, x2, y, colors, heightPx = barHeight, isGhost = false, animationProgress = 1) {
+      const finalWidthPx = Math.max(0, x2 - x1);
+      const widthPx = finalWidthPx * animationProgress; // Apply animation progress
       if (widthPx <= 0 || heightPx <= 0) return null;
 
       const radius = Math.min(10, widthPx / 2, heightPx / 2);
       if (!isGhost && colors.dark) {
-        // 绘制底部阴影层以增强3D感
+        // 1. 底部阴影
         const shadowOffset = 2 / pixelRatio;
+        ctx.globalAlpha = 0.8 * animationProgress; // Fade in shadow
         ctx.fillStyle = colors.shadow;
         fillRoundedRect(ctx, x1, y + shadowOffset, widthPx, heightPx, radius);
+        ctx.globalAlpha = 1;
 
-        // 绘制顶部渐变层
+        // 2. 主体渐变
         const gradient = ctx.createLinearGradient(x1, y, x1, y + heightPx);
         gradient.addColorStop(0, colors.primary);
         gradient.addColorStop(1, colors.dark);
         ctx.fillStyle = gradient;
         fillRoundedRect(ctx, x1, y, widthPx, heightPx, radius);
+
+        // 3. 顶部高光
+        const highlightHeight = heightPx * 0.4;
+        const highlightY = y + 2 / pixelRatio;
+        ctx.globalAlpha = 0.6 * animationProgress; // Fade in highlight
+        const highlightGradient = ctx.createLinearGradient(x1, highlightY, x1, highlightY + highlightHeight);
+        highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = highlightGradient;
+        fillRoundedRect(ctx, x1, highlightY, widthPx, highlightHeight, radius * 0.8);
+        ctx.globalAlpha = 1;
+
       } else {
+        ctx.globalAlpha = 0.5 * animationProgress;
         ctx.fillStyle = colors.primary; // For ghost bars
         fillRoundedRect(ctx, x1, y, widthPx, heightPx, radius);
+        ctx.globalAlpha = 1;
       }
 
       return { x1, x2, y1: y, y2: y + heightPx };
     }
 
     // 行：相段（IVCT / LVET / IVRT）
-    function drawPhaseRow(label, data, compareData, rowIndex, rowKey) {
+    function drawPhaseRow(label, data, compareData, rowIndex, rowKey, animationProgress = 1) {
       const baseY = axisY + headerOffset + rowIndex * rowSpacing;
 
       setBodyText(ctx, pixelRatio);
@@ -610,34 +654,56 @@ Page({
         const ghostY = baseY - ghostHeight / 2;
         drawRoundedBar(
           scale(0), scale(compareData.r_to_ivct_end),
-          ghostY, { primary: COLOR_TOKENS.ivct.soft }, ghostHeight, true
+          ghostY, { primary: COLOR_TOKENS.ivct.soft }, ghostHeight, true, animationProgress
         );
         drawRoundedBar(
           scale(compareData.r_to_ivct_end), scale(compareData.r_to_lvet_end),
-          ghostY, { primary: COLOR_TOKENS.lvet.soft }, ghostHeight, true
+          ghostY, { primary: COLOR_TOKENS.lvet.soft }, ghostHeight, true, animationProgress
         );
         drawRoundedBar(
           scale(compareData.r_to_ivrt_start), scale(compareData.r_to_ivrt_end),
-          ghostY, { primary: COLOR_TOKENS.ivrt.soft }, ghostHeight, true
+          ghostY, { primary: COLOR_TOKENS.ivrt.soft }, ghostHeight, true, animationProgress
         );
       }
 
       // 绘制主要的三相条段 (覆盖在幽灵条之上)
       const barY = baseY - barHeight / 2;
       const colorSet = COLOR_TOKENS.ivct[rowKey] || COLOR_TOKENS.ivct.avg;
-      const ivctSpan = drawRoundedBar(scale(0), scale(data.r_to_ivct_end), barY, colorSet);
-      const lvetSpan = drawRoundedBar(scale(data.r_to_ivct_end), scale(data.r_to_lvet_end), barY, COLOR_TOKENS.lvet[rowKey] || COLOR_TOKENS.lvet.avg);
-      const ivrtSpan = drawRoundedBar(scale(data.r_to_ivrt_start), scale(data.r_to_ivrt_end), barY, COLOR_TOKENS.ivrt[rowKey] || COLOR_TOKENS.ivrt.avg);
+      const ivctSpan = drawRoundedBar(scale(0), scale(data.r_to_ivct_end), barY, colorSet, barHeight, false, animationProgress);
+      const lvetSpan = drawRoundedBar(scale(data.r_to_ivct_end), scale(data.r_to_lvet_end), barY, COLOR_TOKENS.lvet[rowKey] || COLOR_TOKENS.lvet.avg, barHeight, false, animationProgress);
+      const ivrtSpan = drawRoundedBar(scale(data.r_to_ivrt_start), scale(data.r_to_ivrt_end), barY, COLOR_TOKENS.ivrt[rowKey] || COLOR_TOKENS.ivrt.avg, barHeight, false, animationProgress);
 
       // 段标签
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffffff'; // 使用纯白色以获得最大对比度
       ctx.font = `${THEME.font.segment}px sans-serif`;
       ctx.textBaseline = 'middle'; // 垂直居中对齐
       const textY = baseY;
-      if (ivctSpan) ctx.fillText('IVCT', (ivctSpan.x1 + ivctSpan.x2) / 2, textY);
-      if (lvetSpan) ctx.fillText('LVET', (lvetSpan.x1 + lvetSpan.x2) / 2, textY);
-      if (ivrtSpan) ctx.fillText('IVRT', (ivrtSpan.x1 + ivrtSpan.x2) / 2, textY);
+
+      function drawSegmentLabel(span, text) {
+        if (!span || (span.x2 - span.x1) < 20) return; // Don't draw on tiny segments
+        const textWidth = ctx.measureText(text).width;
+        const boxWidth = textWidth + 16;
+        const boxHeight = 18;
+        const boxX = (span.x1 + span.x2) / 2 - boxWidth / 2;
+        const boxY = textY - boxHeight / 2;
+
+        // Draw semi-transparent background
+        ctx.globalAlpha = 0.3 * animationProgress;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        fillRoundedRect(ctx, boxX, boxY, boxWidth, boxHeight, 6);
+        ctx.globalAlpha = 1;
+
+        // Draw text
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = animationProgress;
+        ctx.fillText(text, (span.x1 + span.x2) / 2, textY);
+        ctx.globalAlpha = 1;
+      }
+
+      drawSegmentLabel(ivctSpan, 'IVCT');
+      drawSegmentLabel(lvetSpan, 'LVET');
+      drawSegmentLabel(ivrtSpan, 'IVRT');
+
       ctx.textAlign = 'left';
       setBodyText(ctx, pixelRatio);
     }
@@ -707,7 +773,7 @@ Page({
     rows.push({ type: 'hr', key: 'max', label: `HRmax (${fmt(hi.HR)} bpm)`, payload: hi, compare: lo });
 
     rows.forEach((row, index) => {
-      drawPhaseRow(row.label, row.payload, row.compare, index, row.key);
+      drawPhaseRow(row.label, row.payload, row.compare, index, row.key, animationProgress);
     });
 
     // 在每个泳道上标记 R 点

@@ -134,7 +134,18 @@ page {
   width: 100%;
 }
 
-.hero-title { font-size: 46rpx; font-weight: 800; color: #0b1220; line-height: 1.2; }
+.hero-title {
+  font-size: 48rpx; /* Slightly larger for impact */
+  font-weight: 800;
+  line-height: 1.25;
+  /* Create a vibrant, sky-blue gradient */
+  background: linear-gradient(90deg, #2563eb 0%, #87CEFA 50%, #1E90FF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Add a subtle shadow for depth */
+  text-shadow: 0 2rpx 8rpx rgba(30, 144, 255, 0.2);
+}
 
 .app-title {
   display: block;
