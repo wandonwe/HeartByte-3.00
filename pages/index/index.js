@@ -209,6 +209,20 @@ Page({
     this._startPulse();
   },
 
+  onShareAppMessage: function () {
+    return {
+      title: '心跳节律预测计算器',
+      path: '/pages/index/index'
+    }
+  },
+
+  onShareTimeline: function () {
+    return {
+      title: '心跳节律预测计算器',
+      query: ''
+    }
+  },
+
   onHide() { this._stopPulse(); },
   onUnload() { this._stopPulse(); },
 
