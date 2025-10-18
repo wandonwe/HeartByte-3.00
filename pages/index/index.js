@@ -381,6 +381,12 @@ Page({
         }
         this.animateTimeline(); // Use the new animation function
         this._startPulse(); // Restart pulse with new HR values
+
+        // Scroll to the results section
+        wx.pageScrollTo({
+          selector: '.results-section',
+          duration: 300, // Optional: smooth scroll
+        });
       }
     );
   },
